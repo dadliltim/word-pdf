@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="app-token" content="__APP_TOKEN__">
+  <title>Référence · Word vers PDF</title>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#reference">Aller à la recherche</a>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">R<span>→</span></span><div><strong>Référence</strong><span>ATELIER DOCUMENTAIRE</span></div></div>
+  <span class="local"><span aria-hidden="true">●</span> Espace local · sur ce PC</span>
+</header>
+<main class="workspace">
+  <aside class="settings panel" aria-labelledby="folders-title">
+    <div class="section-kicker">VOTRE CLASSEMENT</div>
+    <h2 id="folders-title">Les dossiers</h2>
+    <p class="muted">Une source, deux destinations.<br>Vos originaux restent à leur place.</p>
+    <div class="folder-field">
+      <label for="source"><span class="folder-number">01</span> Documents à rechercher</label>
+      <input id="source" name="source" type="text" placeholder="C:\Documents\Sources" autocomplete="off" spellcheck="false" aria-describedby="source-help source-error">
+      <p class="field-error" id="source-error"></p>
+      <div class="field-bottom"><span id="source-help">Sous-dossiers inclus</span><button type="button" class="browse" disabled data-folder="source">Parcourir <span aria-hidden="true">→</span></button></div>
+    </div>
+    <div class="folder-field">
+      <label for="documents"><span class="folder-number">02</span> Copies Word renommées</label>
+      <input id="documents" name="documents" type="text" placeholder="C:\Documents\Copies Word" autocomplete="off" spellcheck="false" aria-describedby="documents-error">
+      <p class="field-error" id="documents-error"></p>
+      <div class="field-bottom"><span>.doc et .docx</span><button type="button" class="browse" disabled data-folder="documents">Parcourir <span aria-hidden="true">→</span></button></div>
+    </div>
+    <div class="folder-field">
+      <label for="pdf"><span class="folder-number">03</span> Fichiers PDF</label>
+      <input id="pdf" name="pdf" type="text" placeholder="C:\Documents\PDF" autocomplete="off" spellcheck="false" aria-describedby="pdf-error">
+      <p class="field-error" id="pdf-error"></p>
+      <div class="field-bottom"><span>Documents convertis</span><button type="button" class="browse" disabled data-folder="pdf">Parcourir <span aria-hidden="true">→</span></button></div>
+    </div>
+    <div class="folder-note"><span aria-hidden="true">→</span><p>Choisissez trois dossiers existants et différents. Les dossiers de sortie sont exclus de la recherche.</p></div>
+    <details><summary>À propos de la conversion</summary><p>Microsoft Word ou LibreOffice doit être installé sur le PC qui lance l’application. Aucun document n’est envoyé à un service en ligne.</p></details>
+  </aside>
+  <div class="main-column">
+    <section class="search-panel panel" aria-labelledby="search-title">
+      <div class="section-kicker">WORD → PDF</div>
+      <h1 id="search-title">Rechercher<br>un document Word.</h1>
+      <p class="muted">Retrouvez votre document, renommez sa copie et créez son PDF.</p>
+      <form id="search-form" novalidate>
+        <label for="reference">Référence du document</label>
+        <div class="search-controls">
+          <div class="reference-wrap"><span aria-hidden="true" class="search-symbol">⌕</span><input id="reference" name="reference" placeholder="0680-2026" autocomplete="off" spellcheck="false" inputmode="text" aria-describedby="reference-help reference-error"><button id="clear" type="button" disabled class="clear" aria-label="Effacer la référence" hidden>×</button></div>
+          <button class="primary search-button" type="submit" id="search-button">Rechercher <span aria-hidden="true">→</span></button>
+        </div>
+        <p class="field-error" id="reference-error"></p>
+        <p id="reference-help" class="input-help">Saisissez le numéro et l’année, par exemple 0680-2026.</p>
+      </form>
+      <div class="naming-example"><span class="example-label">EXEMPLE DE RENOMMAGE</span><div><span class="long-name">0680-2026 VI KLJKLD-IJLJL TF 12345-13.docx</span><span class="flow-arrow" aria-hidden="true">→</span><span class="short-name">0680-2026<span>.pdf</span></span></div></div>
+    </section>
+    <div id="status" class="status" role="status" aria-live="polite"><span id="status-symbol" aria-hidden="true">ℹ</span><span id="status-text">Choisissez vos dossiers pour commencer.</span><span id="spinner" class="spinner" hidden aria-hidden="true"></span></div>
+    <section class="results panel" aria-labelledby="results-title" aria-busy="false">
+      <div class="panel-heading"><h2 id="results-title">Documents trouvés</h2><span id="count" class="count">En attente</span></div>
+      <div id="empty" class="empty"><div class="document-stack" aria-hidden="true"><span>DOC</span><span>PDF</span></div><h3 id="empty-title">Votre recherche commence ici</h3><p id="empty-description">Les documents correspondant à votre référence<br>apparaîtront dans cet espace.</p></div>
+      <div id="table-wrap" class="table-wrap" hidden><table><caption class="sr-only">Documents correspondant à la référence. Sélectionnez un seul document à convertir.</caption><thead><tr><th scope="col">Choix</th><th scope="col">Document et emplacement</th><th scope="col">Format</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <nav class="pagination" aria-label="Pages de résultats"><span id="range">Aucun document sélectionné</span><div><button id="previous" type="button" class="small" disabled aria-label="Page précédente">←</button><button id="next" type="button" class="small" disabled aria-label="Page suivante">→</button></div></nav>
+    </section>
+    <section class="export panel" aria-labelledby="export-title">
+      <div><div class="section-kicker">DEUX FICHIERS, UN SEUL GESTE</div><h2 id="export-title">Copier et convertir</h2><p id="selection" class="muted">Sélectionnez un document dans les résultats.</p></div>
+      <button id="export-button" type="button" class="primary" disabled>Créer la copie et le PDF <span aria-hidden="true">→</span></button>
+      <p class="safe-note">Originaux conservés · Aucun fichier existant écrasé</p>
+      <div id="outputs" class="outputs" hidden><h3>Export terminé</h3><div><span class="file-tag">WORD</span><p id="word-path"></p><button id="download-word" type="button" disabled class="secondary">Télécharger Word</button></div><div><span class="file-tag pdf-tag">PDF</span><p id="pdf-path"></p><button id="download-pdf" type="button" disabled class="secondary">Télécharger PDF</button></div></div>
+    </section>
+    <footer>Référence <span aria-hidden="true">/</span> Classement et conversion de documents internes</footer>
+  </div>
+</main>
+</body>
+</html>

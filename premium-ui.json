@@ -1,0 +1,17 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["word_pdf/static"],
+  "locale": "fr-FR",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Table Selection", "Form", "Scrollbar"],
+  "requiredCommands": ["unit", "javascript", "browser"],
+  "commands": {
+    "unit": "python -m unittest discover -s tests -v",
+    "javascript": "node --check word_pdf/static/app.js",
+    "browser": "python tests/browser_check.py"
+  },
+  "evidence": {
+    "failurePaths": "tests/test_web.py",
+    "browserFlow": "tests/browser_check.py"
+  }
+}
