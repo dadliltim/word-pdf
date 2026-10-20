@@ -12,6 +12,8 @@ typography:
     fontFamily: "Segoe UI, sans-serif"
   reference:
     fontFamily: "Consolas, monospace"
+  study:
+    fontFamily: "Georgia, Times New Roman, serif"
 rounded:
   control: "6px"
   panel: "10px"
@@ -33,6 +35,8 @@ Le bleu ardoise donne une hiérarchie de bureau documentaire. `word_pdf/theme.js
 Segoe UI est la police système Windows utilisée pour les titres et contrôles, avec Arial/sans-serif de remplacement sur le web. La référence reste un texte sélectionnable dans un champ natif, en Consolas/monospace dans le navigateur. Aucun téléchargement de police.
 
 ## Layout
+
+Le bandeau blanc de 100px possède trois colonnes équilibrées : Référence à gauche, signature centrée « Etude Maitre Souad CHABAB » et « By Hatim DALIL » en dessous, version à droite. La signature adopte Georgia en 25px/400, une signature secondaire de 10px avec espacement de lettres, et deux traits fins issus de la couleur de bordure existante. Cette exception typographique évoque l'en-tête d'une étude ; les formulaires conservent Segoe UI. Sous 960px, elle passe sur une seconde ligne centrée en 21px pour éviter tout chevauchement. Aucun téléchargement de police ni nouvelle couleur.
 
 Le bureau conserve sa grille redimensionnable, marges de 24 pixels et fenêtre minimale de 660 × 640 pixels. Le web utilise une colonne de dossiers de 310 pixels et une colonne de travail fluide, largeur maximale de 1320 pixels. Sous 700 pixels, les colonnes se suivent dans le défilement naturel de la page. Seul le tableau possède un défilement interne, avec pagination serveur de 25 résultats. Aucune hauteur de viewport imposée au formulaire.
 
