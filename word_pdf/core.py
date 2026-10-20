@@ -14,10 +14,13 @@ class DocumentError(Exception):
     """Erreur pouvant être présentée à l'utilisateur."""
 
 
-def normalize_name(value: str) -> str:
+def normalize_name(value: str, *, strip_quotes: bool = True) -> str:
     digits = "٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹０１２３４５６７８９"
     value = value.translate(str.maketrans({char: str(index % 10) for index, char in enumerate(digits)}))
-    return re.sub(r"\s*[-‐‑‒–—−－]\s*", "-", value.strip().strip('"\'“”'))
+    value = value.strip()
+    if strip_quotes:
+        value = value.strip('"\'“”')
+    return re.sub(r"\s*[-‐‑‒–—−－]\s*", "-", value)
 
 
 def validate_reference(value: str) -> str:

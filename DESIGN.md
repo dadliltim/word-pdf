@@ -52,6 +52,8 @@ Le web réutilise `core.py` pour les règles de fichiers. Les propriétaires des
 
 La sélection web utilise désormais des cases à cocher natives, avec compteur global et sélection de la page. `batch-dialog` reprend le rayon des panneaux, les boutons et les couleurs existants ; son contenu défile naturellement dans une hauteur maximale de 85vh. Le bilan du lot utilise des blocs de résultats avec les mêmes chemins et boutons de téléchargement, sans nouvelle palette.
 
+Le panneau de saisie libre est un `details` ouvert, de couleur soft et de rayon de contrôle. Son textarea natif garde une hauteur suffisante et son défilement système ; la proposition modifiable utilise le même champ texte que la recherche. La mention de traitement local et l'étape de vérification font partie du contenu permanent, sans habillage de chat ou promesse d'IA générative.
+
 ## Do's and Don'ts
 
 Conserver les champs après une erreur, afficher les chemins exportés après réussite, désactiver les actions pendant une opération. Ne jamais écraser une sortie ni modifier un original. La recherche est explicite et locale ; aucune référence ni aucun chemin n'est stocké dans une URL ou envoyé sur le réseau. Tester l'accessibilité avec les outils Windows avant diffusion ; aucune conformité lecteur d'écran n'est revendiquée par inspection du code.

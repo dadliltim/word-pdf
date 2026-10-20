@@ -13,7 +13,8 @@ function status(text, tone = '') {
 }
 
 function updateControls() {
-  document.querySelectorAll('button, input').forEach(element => { element.disabled = busy; });
+  document.querySelectorAll('button, input, textarea').forEach(element => { element.disabled = busy; });
+  $('use-proposal').disabled = busy || !$('proposed-searches').value.trim();
   document.querySelectorAll('#rows input').forEach(input => {
     input.disabled = busy || !current.items.find(item => item.index === Number(input.value))?.reference || completed.has(Number(input.value));
     input.checked = selected.has(Number(input.value));
@@ -65,6 +66,40 @@ async function request(route, body, download = false) {
   }
   return download ? response.blob() : response.json();
 }
+
+$('assistant-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (busy || event.isComposing) return;
+  const text = $('free-request').value.trim();
+  $('assistant-error').textContent = '';
+  $('assistant-proposal').hidden = true;
+  $('proposed-searches').value = '';
+  if (!text || text.length > 2000) {
+    $('assistant-error').textContent = 'Décrivez votre recherche en 2 000 caractères maximum.';
+    $('free-request').setAttribute('aria-invalid', 'true'); $('free-request').focus(); return;
+  }
+  $('free-request').setAttribute('aria-invalid', 'false');
+  busy = true; updateControls(); status('Préparation locale des recherches…');
+  try {
+    const result = await request('prepare-search', {text});
+    $('proposed-searches').value = result.queries.join(' ; ');
+    $('assistant-warning').textContent = result.warnings.length ? result.warnings.join('\n') : 'Vérifiez les références et les noms avant de les utiliser.';
+    $('assistant-proposal').hidden = false;
+    status(result.queries.length ? 'Recherches proposées. Vérifiez-les avant de les utiliser.' : 'Précisez votre demande ou saisissez les recherches manuellement.');
+  } catch (error) { $('assistant-error').textContent = error.message; status(error.message, 'error'); }
+  finally { busy = false; updateControls(); }
+});
+$('free-request').addEventListener('input', () => {
+  $('assistant-proposal').hidden = true; $('proposed-searches').value = '';
+  $('assistant-error').textContent = ''; $('free-request').setAttribute('aria-invalid', 'false'); updateControls();
+});
+$('proposed-searches').addEventListener('input', updateControls);
+$('use-proposal').addEventListener('click', () => {
+  if (busy || !$('proposed-searches').value.trim()) return;
+  $('reference').value = $('proposed-searches').value.trim();
+  $('reference').dispatchEvent(new Event('input')); $('reference').focus();
+  status('Recherches prêtes. Cliquez sur Rechercher pour consulter les documents.');
+});
 
 function render(result) {
   current = result;

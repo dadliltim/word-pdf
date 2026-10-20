@@ -10,6 +10,10 @@ Le parcours reste le même : trois dossiers → recherche → documents cochés 
 
 ### Recherche et conversion de plusieurs fichiers (web)
 
+Le panneau **Décrire ma recherche en texte libre** permet par exemple de saisir : « Cherche les actes 0677 et 0680 de l’année 2026, ainsi que les documents de SAID OUFFA ». Cliquer sur **Préparer les recherches**, vérifier/modifier `0677-2026 ; 0680-2026 ; SAID OUFFA`, puis cliquer sur **Utiliser ces recherches** et **Rechercher**. La préparation n'explore aucun dossier et ne convertit aucun fichier.
+
+Cet assistant est un interpréteur local de formulations courantes, **sans modèle d'IA générative, clé API ni envoi externe**. Il conserve les zéros initiaux et reconnaît références complètes, listes de numéros avec année explicite et noms entre guillemets. Une année absente ou ambiguë doit être précisée. Les plages de numéros et exclusions ne sont pas appliquées automatiquement : vérifier les avertissements et corriger les propositions. Pour des formulations non reconnues, utiliser les guillemets autour des mots voulus ou la recherche directe. Le texte libre est limité à 2 000 caractères ; les recherches proposées conservent la limite de 20 demandes / 300 caractères.
+
 Saisir par exemple `0677-2026 ; 0680-2026 ; MANAZIL` : le point-virgule sépare les recherches (jusqu'à 20 demandes, 300 caractères au total). Les résultats sont réunis sans afficher plusieurs fois le même fichier. Les demandes sans correspondance sont indiquées.
 
 Cocher les documents voulus ou **Sélectionner cette page**. La sélection est conservée entre les pages ; **Tout désélectionner** la vide. Les documents sans référence numéro-année restent visibles mais ne peuvent pas être cochés. Jusqu'à 100 documents par traitement. Le bouton **Valider le renommage et convertir** ouvre un récapitulatif des documents et des deux noms de sortie ; **Annuler** n'écrit rien, **Traiter N document(s)** démarre la conversion séquentielle.

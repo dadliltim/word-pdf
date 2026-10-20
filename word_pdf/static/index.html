@@ -46,6 +46,23 @@
       <div class="section-kicker">WORD → PDF</div>
       <h1 id="search-title">Rechercher<br>un document Word.</h1>
       <p class="muted">Retrouvez votre document, renommez sa copie et créez son PDF.</p>
+      <details class="assistant" open>
+        <summary>Décrire ma recherche en texte libre</summary>
+        <p class="input-help">Assistant local sans IA générative ni envoi externe. Il prépare des recherches à vérifier ; il ne convertit aucun fichier.</p>
+        <form id="assistant-form" novalidate>
+          <label for="free-request">Votre demande</label>
+          <textarea id="free-request" class="resize-none" rows="3" placeholder="Cherche les actes 0677 et 0680 de l’année 2026, ainsi que les documents de SAID OUFFA." aria-describedby="assistant-help assistant-error"></textarea>
+          <p id="assistant-help" class="input-help">Indiquez une année pour les numéros incomplets. Pour un nom précis, utilisez des guillemets : « SAID OUFFA ».</p>
+          <p id="assistant-error" class="field-error"></p>
+          <button id="prepare-search" type="submit" class="secondary">Préparer les recherches</button>
+        </form>
+        <div id="assistant-proposal" hidden>
+          <label for="proposed-searches">Recherches proposées — modifiables avant validation</label>
+          <input id="proposed-searches" type="text" aria-describedby="assistant-warning">
+          <p id="assistant-warning" class="input-help" role="status"></p>
+          <button id="use-proposal" type="button" class="secondary" disabled>Utiliser ces recherches</button>
+        </div>
+      </details>
       <form id="search-form" novalidate>
         <label for="reference">Rechercher un document Word</label>
         <div class="search-controls">

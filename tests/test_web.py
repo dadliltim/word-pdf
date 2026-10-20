@@ -117,6 +117,13 @@ class WebTest(unittest.TestCase):
         self.assertEqual(result['total'], 2)
         self.assertEqual(result['missing_queries'], ['absent'])
 
+    def test_assistant_only_proposes_queries_without_accessing_folders(self):
+        status, result = self.api('prepare-search', {'text': 'Cherche les actes 0677 et 0680 en 2026'})
+        self.assertEqual(status, 200)
+        self.assertEqual(result['queries'], ['0677-2026', '0680-2026'])
+        self.assertEqual(list((self.root / 'word').iterdir()), [])
+        self.assertEqual(list((self.root / 'pdf').iterdir()), [])
+
     def test_busy_conversion_is_rejected(self):
         _, search = self.api('search', self.body)
         self.server.conversion.acquire()

@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from .core import DocumentError, export_document, find_documents, validate_reference, search_queries, matches_query
+from .assistant import prepare_search
 
 STATIC = Path(__file__).with_name("static")
 PAGE_SIZE = 25
@@ -87,7 +88,9 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
             if not isinstance(data, dict):
                 raise DocumentError("Requête invalide.")
-            if self.path == "/api/search":
+            if self.path == "/api/prepare-search":
+                self._send(200, prepare_search(self._text(data, "text")))
+            elif self.path == "/api/search":
                 reference = self._text(data, "reference")
                 source = Path(self._text(data, "source")).expanduser().resolve()
                 folders = [Path(self._text(data, key)).expanduser().resolve() for key in ("documents", "pdf")]
