@@ -179,6 +179,20 @@ def main():
                 expect(page.locator('#rows input')).to_be_disabled()
                 expect(page.locator('#rows')).to_contain_text('Référence numéro-année absente')
                 expect(page.locator('#export-button')).to_be_disabled()
+                arabic = document.parent / 'عقد بيع الاملاك المخزنية - الملك الخاص  - عائشة الحميدي سيتل-   2026-0627  - TF 24083-R ok.docx'
+                arabic.write_bytes(b'Arabic filename document fixture')
+                for query in ('عائشة الحميدي', '0627-2026', '2026-0627', '\u200f٠٦٢٧-٢٠٢٦'):
+                    page.locator('#reference').fill(query)
+                    page.locator('#search-button').click()
+                    expect(page.locator('#rows tr')).to_have_count(1)
+                    expect(page.locator('#rows bdi')).to_have_text(arabic.name)
+                page.locator('#rows input').check()
+                page.locator('#export-button').click()
+                expect(page.locator('#batch-preview')).to_contain_text('0627-2026.docx + 0627-2026.pdf')
+                page.locator('#confirm-batch').click()
+                expect(page.locator('#status')).to_contain_text('Traitement terminé : 1 réussi(s), 0 échec(s)')
+                expect(page.locator('#export-results')).to_contain_text('0627-2026.pdf')
+                assert arabic.read_bytes() == b'Arabic filename document fixture'
                 assert not errors, errors
                 browser.close()
                 print('Navigateur : validation, recherche vide, sélection, état en cours, export simulé, téléchargement, collision, pagination, erreur serveur, clavier et écran étroit : OK.')

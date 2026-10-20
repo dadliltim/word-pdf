@@ -224,7 +224,7 @@ class Application(tk.Tk):
         try:
             reference = validate_reference(document.stem)
         except DocumentError:
-            self._message("Ce document ne commence pas par une référence numéro-année. Aucun nom de sortie ne peut être extrait.", True)
+            self._message("La référence du document est absente ou ambiguë. Aucun nom de sortie ne peut être extrait.", True)
             return
         self._message("Copie et conversion en cours… Les originaux sont conservés.")
         self._work("export", lambda: export_document(document, reference, Path(documents), Path(pdf)))

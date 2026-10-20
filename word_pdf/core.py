@@ -15,6 +15,10 @@ class DocumentError(Exception):
 
 
 def normalize_name(value: str, *, strip_quotes: bool = True) -> str:
+    # Comparaison uniquement : conserver les vrais chemins et noms sur disque.
+    value = unicodedata.normalize('NFKC', value)
+    value = ''.join(char for char in value if unicodedata.category(char) != 'Cf' and char != '\u0640')
+    value = value.translate(str.maketrans({'ی': 'ي', 'ک': 'ك'}))
     digits = "٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹０１２３４５６７８９"
     value = value.translate(str.maketrans({char: str(index % 10) for index, char in enumerate(digits)}))
     value = value.strip()
@@ -23,16 +27,32 @@ def normalize_name(value: str, *, strip_quotes: bool = True) -> str:
     return re.sub(r"\s*[-‐‑‒–—−－]\s*", "-", value)
 
 
+def references_in_name(value: str) -> list[str]:
+    pattern = r"(?<![0-9A-Za-z])([0-9]{1,12})-([0-9]{1,12})(?=$|[\s_.]|-(?![0-9])|[\u0621-\u064a])"
+    references = []
+    for left, right in re.findall(pattern, normalize_name(value)):
+        # Numéro-année en priorité ; année-numéro si le côté gauche est clairement l'année.
+        if len(right) == 4 and 1900 <= int(right) <= 2099:
+            references.append(f'{left}-{right}')
+        elif len(left) == 4 and 1900 <= int(left) <= 2099:
+            references.append(f'{right}-{left}')
+        elif len(right) == 4:
+            references.append(f'{left}-{right}')
+    return list(dict.fromkeys(references))
+
+
 def validate_reference(value: str) -> str:
-    """Accepte une référence ou un nom complet dont elle est le préfixe."""
-    match = re.match(r"^([0-9]{1,12}-[0-9]{4})(?=$|[\s_.]|-(?![0-9]))", normalize_name(value))
-    if not match:
-        raise DocumentError("Saisissez une référence numéro-année, ou collez un nom commençant par 0677-2026.")
-    return match.group(1)
+    """Extrait une référence unique, quelle que soit sa position dans le nom."""
+    references = references_in_name(value) if not any(char in value for char in '/\\') else []
+    if len(references) > 1:
+        raise DocumentError("Plusieurs références sont présentes dans ce nom. Le renommage automatique est indisponible.")
+    if not references:
+        raise DocumentError("Aucune référence numéro-année reconnue dans le nom, par exemple 0677-2026.")
+    return references[0]
 
 
 def search_queries(value: str) -> list[str]:
-    parts = (part.strip().strip('"\'“”') for part in re.split(r"[;\n]+", value))
+    parts = (part.strip().strip('"\'“”') for part in re.split(r"[;؛\n]+", value))
     queries = list(dict.fromkeys(part for part in parts if part))
     if not queries or len(value) > 300 or len(queries) > 20:
         raise DocumentError("Saisissez jusqu’à 20 recherches séparées par un point-virgule (300 caractères maximum).")
@@ -44,9 +64,10 @@ def matches_query(name: str, query: str) -> bool:
         return ''.join(char for char in unicodedata.normalize('NFKD', normalize_name(value).casefold())
                        if not unicodedata.combining(char))
     normalized, candidate = searchable(query), searchable(name)
-    if re.fullmatch(r"[0-9]{1,12}-[0-9]{4}", normalized):
-        return bool(re.match(r"^" + re.escape(normalized) + r"(?=$|[\s_.]|-(?![0-9]))", candidate))
-    return all(term in candidate for term in normalized.split())
+    if re.fullmatch(r"[0-9]{1,12}-[0-9]{1,12}", normalized) and references_in_name(normalized):
+        return bool(set(references_in_name(normalized)) & set(references_in_name(candidate)))
+    terms = normalized.split()
+    return bool(terms) and all(term in candidate for term in terms)
 
 
 def find_documents(source: Path, reference: str, excluded: tuple[Path, ...] = ()) -> list[Path]:
@@ -142,7 +163,7 @@ def export_document(document: Path, reference: str, documents_dir: Path, pdf_dir
         raise DocumentError("Choisissez deux dossiers de sortie différents : documents Word et PDF.")
     if document.suffix.lower() not in {".doc", ".docx"} or not document.is_file():
         raise DocumentError("Le document sélectionné n’est plus disponible. Relancez la recherche.")
-    if not re.match(r"^" + re.escape(reference) + r"(?=$|[\s_]|-(?![0-9]))", normalize_name(document.stem), re.I):
+    if validate_reference(document.stem) != reference:
         raise DocumentError("Le document sélectionné ne correspond pas à cette référence.")
     for folder in (documents_dir, pdf_dir):
         if not folder.is_dir():

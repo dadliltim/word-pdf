@@ -50,16 +50,18 @@ On peut aussi lancer `py -3 -m word_pdf` depuis le dossier du projet.
 4. Sélectionner le document souhaité et vérifier les noms de sortie proposés dans la version web. Ils sont extraits du fichier sélectionné, indépendamment des mots saisis.
 5. Cliquer sur **Valider le renommage et convertir** dans la version web, ou **Copier et convertir en PDF** dans la version bureau. La recherche seule n'écrit aucun fichier.
 
-Un document sans référence numéro-année au début de son nom apparaît dans les résultats, mais son export est bloqué avec une explication : l'application ne peut pas deviner sa référence.
+Un document sans référence numéro-année, ou contenant plusieurs références différentes, apparaît dans les résultats, mais son export est bloqué avec une explication : l'application ne peut pas deviner sa référence.
 
 Exemple : `0680-2026 VI KLJKLD-IJLJL TF 12345-13.docx` donne :
 
 - `Copies Word\0680-2026.docx` (copie du document, sans conversion de son format) ;
 - `Fichiers PDF\0680-2026.pdf`.
 
-La référence doit être au début du nom. `0680-2026 suite.doc` correspond ; `10680-2026.doc` et `0680-20260.doc` ne correspondent pas. Les extensions majuscules sont acceptées, les fichiers temporaires Word `~$…` sont ignorés. Un résultat par document est affiché ; aucune sélection arbitraire entre doublons.
+La référence peut être au début, au milieu ou à la fin du nom : `0680-2026 suite.doc` et `عقد بيع ٠٦٨٠-٢٠٢٦.docx` correspondent à `0680-2026` ; `10680-2026.doc` et `0680-20260.doc` ne correspondent pas. Les noms arabes sont comparés sans marques invisibles de direction, voyelles ni allongement `ـ` ; les formes de présentation et variantes `ی/ي`, `ک/ك` sont normalisées. Ces transformations servent seulement à chercher et extraire la référence : les fichiers originaux gardent exactement leur nom. Une référence unique est obligatoire pour le renommage automatique. Les extensions majuscules sont acceptées, les fichiers temporaires Word `~$…` sont ignorés. Un résultat par document est affiché ; aucune sélection arbitraire entre doublons.
 
 ## Garanties et limites
+
+Le format inversé **année-numéro** est également reconnu lorsqu'un côté est clairement une année (1900–2099). Votre exemple `عقد بيع الاملاك المخزنية ... 2026-0627 - TF 24083-R ok.docx` est trouvé avec `0627-2026`, `2026-0627` ou `عائشة الحميدي` ; les sorties sont `0627-2026.docx` et `0627-2026.pdf`. Le format numéro-année reste prioritaire lorsque le côté droit est déjà une année.
 
 - Aucun écrasement : si la copie Word ou le PDF existe déjà, l'opération est refusée. Choisir d'autres dossiers ou déplacer soi-même les exports existants pour recommencer.
 - La conversion s'effectue d'abord dans un dossier temporaire. Une erreur de conversion ne laisse pas d'export final. Si l'écriture du PDF échoue, la nouvelle copie Word est retirée. Une interruption brutale du PC peut néanmoins laisser un export incomplet.

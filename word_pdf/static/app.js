@@ -125,11 +125,12 @@ function render(result) {
     choice.append(radio);
     const details = document.createElement('td');
     const label = document.createElement('label'); label.htmlFor = radio.id;
-    label.append(document.createTextNode(item.name));
-    const folder = document.createElement('span'); folder.className = 'subfolder'; folder.textContent = item.folder === '.' ? 'Dossier source' : item.folder;
+    const filename = document.createElement('bdi'); filename.dir = 'auto'; filename.textContent = item.name;
+    label.append(filename);
+    const folder = document.createElement('span'); folder.className = 'subfolder'; folder.dir = 'auto'; folder.textContent = item.folder === '.' ? 'Dossier source' : item.folder;
     label.append(folder); details.append(label);
-    const proposal = document.createElement('span'); proposal.className = 'subfolder';
-    proposal.textContent = item.reference ? `Noms proposés : ${item.reference}${item.extension} et ${item.reference}.pdf` : 'Référence numéro-année absente : conversion indisponible';
+    const proposal = document.createElement('span'); proposal.className = 'subfolder'; proposal.dir = 'ltr';
+    proposal.textContent = item.reference ? `Noms proposés : ${item.reference}${item.extension} et ${item.reference}.pdf` : 'Référence numéro-année absente ou ambiguë : conversion indisponible';
     label.append(proposal);
     const format = document.createElement('td');
     const tag = document.createElement('span'); tag.className = 'file-tag'; tag.textContent = item.extension.slice(1).toUpperCase();
