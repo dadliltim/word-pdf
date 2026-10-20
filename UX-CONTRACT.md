@@ -40,6 +40,8 @@ La sélection peut couvrir plusieurs pages, avec un compteur global et une case 
 
 ## Limite d'accès du serveur
 
+La version du processus serveur est injectée dans le bandeau depuis `word_pdf.__version__`. Au démarrage standard, un port libre peut remplacer 8765 si un ancien serveur l'occupe ; l'adresse ouverte est toujours celle du nouveau processus. Un port explicite n'est jamais remplacé silencieusement. Les erreurs d'extraction sont transmises par `reference_error` dans les résultats, sans proposer de référence inventée. Les fichiers absents de référence et ceux avec plusieurs références différentes affichent des explications distinctes.
+
 Application web locale mono-poste, écoute uniquement sur `127.0.0.1`. Vérification Host, Origin et jeton de démarrage sur les opérations, pas de CORS. Les téléchargements sont limités aux sorties enregistrées par le processus. Ne pas exposer ce serveur sur Internet ou le réseau interne sans une tâche distincte ajoutant authentification, autorisations et déploiement serveur. Les dossiers sont ceux du PC qui exécute Python ; un navigateur distant ne donne pas accès automatiquement à ses propres dossiers.
 
 ## Locale et accessibilité

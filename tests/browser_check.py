@@ -44,6 +44,7 @@ def main():
                 errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
                 page.goto(f'http://127.0.0.1:{server.server_port}')
+                expect(page.locator('.local')).to_contain_text('v1.0.1')
                 expect(page.locator('#export-button')).to_be_disabled()
                 expect(page.locator('#source')).to_have_value(r'\\Srv\data')
                 expect(page.locator('#documents')).to_have_value(r'\\srv\gen$\Actes')
@@ -177,7 +178,7 @@ def main():
                 page.locator('#search-button').click()
                 expect(page.locator('#rows tr')).to_have_count(1)
                 expect(page.locator('#rows input')).to_be_disabled()
-                expect(page.locator('#rows')).to_contain_text('Référence numéro-année absente')
+                expect(page.locator('#rows')).to_contain_text('Aucune référence numéro-année reconnue')
                 expect(page.locator('#export-button')).to_be_disabled()
                 arabic = document.parent / 'عقد بيع الاملاك المخزنية - الملك الخاص  - عائشة الحميدي سيتل-   2026-0627  - TF 24083-R ok.docx'
                 arabic.write_bytes(b'Arabic filename document fixture')

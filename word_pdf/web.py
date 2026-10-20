@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .core import DocumentError, export_document, find_documents, validate_reference, search_queries, matches_query
 from .assistant import prepare_search
+from . import __version__
 
 STATIC = Path(__file__).with_name("static")
 PAGE_SIZE = 25
@@ -70,7 +71,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"error": "Page introuvable."})
             return
         name, mime = assets[self.path]
-        content = (STATIC / name).read_bytes().replace(b"__APP_TOKEN__", self.server.token.encode())
+        content = (STATIC / name).read_bytes().replace(b"__APP_TOKEN__", self.server.token.encode()).replace(b"__APP_VERSION__", __version__.encode())
         self._send(200, content, mime)
 
     def do_POST(self):
@@ -186,28 +187,42 @@ class Handler(BaseHTTPRequestHandler):
         start = page * PAGE_SIZE
         def suggested(path):
             try:
-                return validate_reference(path.stem)
-            except DocumentError:
-                return None
+                return {"reference": validate_reference(path.stem), "reference_error": None}
+            except DocumentError as error:
+                return {"reference": None, "reference_error": str(error)}
         missing = [query for query in search_queries(reference) if not any(matches_query(path.name, query) for path in paths)]
         return {"search_id": key, "reference": reference, "page": page, "total": len(paths), "page_size": PAGE_SIZE,
                 "missing_queries": missing,
                 "items": [{"index": index, "name": path.name, "folder": str(path.parent.relative_to(source)),
-                           "reference": suggested(path), "extension": path.suffix.lower()}
+                           **suggested(path), "extension": path.suffix.lower()}
                           for index, path in enumerate(paths[start:start + PAGE_SIZE], start)]}
+
+
+def open_server(port=None):
+    if port is not None:
+        return LocalServer(("127.0.0.1", port))
+    try:
+        return LocalServer(("127.0.0.1", 8765))
+    except OSError as error:
+        import errno
+        if error.errno != errno.EADDRINUSE and getattr(error, 'winerror', None) != 10048:
+            raise
+        # Un ancien lanceur peut rester actif après extraction d'une nouvelle version.
+        # Ouvrir notre nouvelle instance sur un port libre, sans arrêter d'autres processus.
+        return LocalServer(("127.0.0.1", 0))
 
 
 def main():
     parser = argparse.ArgumentParser(description="Référence — application web locale")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
     try:
-        server = LocalServer(("127.0.0.1", args.port))
+        server = open_server(args.port)
     except OSError as error:
         parser.exit(1, f"Impossible de démarrer le serveur : {error}. Essayez --port 8766.\n")
     address = f"http://127.0.0.1:{server.server_port}"
-    print(f"Référence démarré : {address}\nGardez cette fenêtre ouverte. Ctrl+C pour arrêter.")
+    print(f"Référence {__version__} démarré : {address}\nGardez cette fenêtre ouverte. Ctrl+C pour arrêter.")
     if not args.no_browser:
         webbrowser.open(address)
     try:

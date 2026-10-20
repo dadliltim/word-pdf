@@ -32,6 +32,8 @@ Ces chemins réseau nécessitent que le compte Windows utilisé ait accès au pa
 
 Lancement manuel : `py -3 -m word_pdf.web`. Si le port est occupé : `py -3 -m word_pdf.web --port 8766`. Arrêter le serveur avec Ctrl+C dans sa fenêtre. `--no-browser` désactive l'ouverture automatique du navigateur.
 
+Lors d'une mise à jour, fermer l'ancien lanceur, extraire le nouveau ZIP dans un autre dossier puis ouvrir son **Lancer-Web.bat**. Vérifier la mention **v1.0.1** en haut de la page. Fermer seulement l'onglet n'arrête pas l'ancien serveur. Sans port explicitement fixé, un port libre est choisi si le port 8765 est déjà utilisé, et le navigateur ouvre l'adresse de la nouvelle instance. Un port demandé explicitement reste strict : son occupation est signalée comme une erreur. Les références absentes et ambiguës affichent désormais leur cause précise dans la liste.
+
 Cette version web fonctionne **localement sur le PC Windows**, sans hébergement externe ni dépendance Python supplémentaire. Les dossiers sont ceux du PC exécutant Python. Le serveur écoute uniquement en boucle locale et ne fournit pas d'accès multi-utilisateur depuis le réseau ; un déploiement partagé nécessiterait une authentification, des droits d'accès et une configuration serveur spécifiques.
 
 ## Installation sur Windows

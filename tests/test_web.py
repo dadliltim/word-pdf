@@ -1,4 +1,5 @@
 import http.client
+import errno
 import json
 import tempfile
 import threading
@@ -7,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from word_pdf.core import export_document
-from word_pdf.web import LocalServer
+from word_pdf.web import LocalServer, open_server
 
 
 class WebTest(unittest.TestCase):
@@ -108,7 +109,29 @@ class WebTest(unittest.TestCase):
         status, result = self.api('search', self.body | {'reference': 'manazil'})
         self.assertEqual(status, 200)
         self.assertEqual([item['reference'] for item in result['items']], ['0677-2026', '0788-2026', None])
+        self.assertIn('Aucune référence', result['items'][2]['reference_error'])
         self.assertEqual(self.api('export', {'search_id': result['search_id'], 'index': 2})[0], 400)
+
+    def test_busy_default_port_starts_fresh_instance_on_free_port(self):
+        real_server = LocalServer
+        addresses = []
+        def factory(address):
+            addresses.append(address)
+            if len(addresses) == 1:
+                raise OSError(errno.EADDRINUSE, 'port occupied by older instance')
+            return real_server(address)
+        with patch('word_pdf.web.LocalServer', side_effect=factory):
+            server = open_server()
+        try:
+            self.assertNotEqual(server.server_port, 0)
+            self.assertEqual(addresses, [('127.0.0.1', 8765), ('127.0.0.1', 0)])
+        finally:
+            server.server_close()
+
+    def test_explicit_port_conflict_is_reported(self):
+        with patch('word_pdf.web.LocalServer', side_effect=OSError(errno.EADDRINUSE, 'busy')):
+            with self.assertRaises(OSError):
+                open_server(8766)
 
     def test_multiple_searches_report_missing_queries(self):
         (self.root / 'source/0677-2026 MANAZIL.docx').touch()
