@@ -53,7 +53,7 @@
           <button class="primary search-button" type="submit" id="search-button">Rechercher <span aria-hidden="true">→</span></button>
         </div>
         <p class="field-error" id="reference-error"></p>
-        <p id="reference-help" class="input-help">Tapez une référence, un nom ou quelques mots : 0677-2026, MANAZIL, SAID OUFFA…</p>
+        <p id="reference-help" class="input-help">Recherchez plusieurs références ou noms avec un point-virgule : 0677-2026 ; 0680-2026 ; MANAZIL. Jusqu’à 20 recherches.</p>
       </form>
       <div class="naming-example"><span class="example-label">EXEMPLE DE RENOMMAGE</span><div><span class="long-name">0680-2026 VI KLJKLD-IJLJL TF 12345-13.docx</span><span class="flow-arrow" aria-hidden="true">→</span><span class="short-name">0680-2026<span>.pdf</span></span></div></div>
     </section>
@@ -61,17 +61,25 @@
     <section class="results panel" aria-labelledby="results-title" aria-busy="false">
       <div class="panel-heading"><h2 id="results-title">Documents trouvés</h2><span id="count" class="count">En attente</span></div>
       <div id="empty" class="empty"><div class="document-stack" aria-hidden="true"><span>DOC</span><span>PDF</span></div><h3 id="empty-title">Votre recherche commence ici</h3><p id="empty-description">Les documents correspondant à votre référence<br>apparaîtront dans cet espace.</p></div>
-      <div id="table-wrap" class="table-wrap" hidden><table><caption class="sr-only">Documents correspondant à la référence. Sélectionnez un seul document à convertir.</caption><thead><tr><th scope="col">Choix</th><th scope="col">Document et emplacement</th><th scope="col">Format</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <p id="missing-queries" class="missing-queries" hidden></p>
+      <div class="batch-toolbar"><label><input id="select-page" type="checkbox" disabled> Sélectionner cette page</label><button id="clear-selection" type="button" class="secondary" disabled>Tout désélectionner</button></div>
+      <div id="table-wrap" class="table-wrap" hidden><table><caption class="sr-only">Documents correspondant à la recherche. Cochez les documents à convertir.</caption><thead><tr><th scope="col">Choix</th><th scope="col">Document et emplacement</th><th scope="col">Format</th></tr></thead><tbody id="rows"></tbody></table></div>
       <nav class="pagination" aria-label="Pages de résultats"><span id="range">Aucun document sélectionné</span><div><button id="previous" type="button" class="small" disabled aria-label="Page précédente">←</button><button id="next" type="button" class="small" disabled aria-label="Page suivante">→</button></div></nav>
     </section>
     <section class="export panel" aria-labelledby="export-title">
-      <div><div class="section-kicker">DEUX FICHIERS, UN SEUL GESTE</div><h2 id="export-title">Copier et convertir</h2><p id="selection" class="muted">Sélectionnez un document dans les résultats.</p></div>
+      <div><div class="section-kicker">TRAITEMENT PAR LOT</div><h2 id="export-title">Copier et convertir</h2><p id="selection" class="muted">Cochez un ou plusieurs documents dans les résultats.</p></div>
       <button id="export-button" type="button" class="primary" disabled>Valider le renommage et convertir <span aria-hidden="true">→</span></button>
       <p class="safe-note">Originaux conservés · Aucun fichier existant écrasé</p>
-      <div id="outputs" class="outputs" hidden><h3>Export terminé</h3><div><span class="file-tag">WORD</span><p id="word-path"></p><button id="download-word" type="button" disabled class="secondary">Télécharger Word</button></div><div><span class="file-tag pdf-tag">PDF</span><p id="pdf-path"></p><button id="download-pdf" type="button" disabled class="secondary">Télécharger PDF</button></div></div>
+      <div id="outputs" class="outputs" hidden><h3 id="batch-summary">Résultats du traitement</h3><div id="export-results"></div></div>
     </section>
     <footer>Référence <span aria-hidden="true">/</span> Classement et conversion de documents internes</footer>
   </div>
 </main>
+<dialog id="batch-dialog" aria-labelledby="batch-title" aria-describedby="batch-description">
+  <h2 id="batch-title">Valider le traitement</h2>
+  <p id="batch-description"></p><ul id="batch-preview"></ul>
+  <p class="muted">Les originaux seront conservés. Les fichiers existants ne seront pas écrasés.</p>
+  <div class="dialog-actions"><button id="cancel-batch" type="button" class="secondary" disabled autofocus>Annuler</button><button id="confirm-batch" type="button" class="primary" disabled>Lancer le traitement</button></div>
+</dialog>
 </body>
 </html>

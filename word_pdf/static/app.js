@@ -2,7 +2,9 @@
 const $ = id => document.getElementById(id);
 const fields = ['source', 'documents', 'pdf', 'reference'];
 const token = document.querySelector('meta[name="app-token"]').content;
-let current = null, selected = null, exported = null, busy = false;
+let current = null, busy = false;
+const selected = new Map();
+const completed = new Set();
 
 function status(text, tone = '') {
   $('status-text').textContent = text;
@@ -12,7 +14,18 @@ function status(text, tone = '') {
 
 function updateControls() {
   document.querySelectorAll('button, input').forEach(element => { element.disabled = busy; });
-  $('export-button').disabled = busy || selected === null || !current || !current.items.find(item => item.index === selected)?.reference;
+  document.querySelectorAll('#rows input').forEach(input => {
+    input.disabled = busy || !current.items.find(item => item.index === Number(input.value))?.reference || completed.has(Number(input.value));
+    input.checked = selected.has(Number(input.value));
+  });
+  $('export-button').disabled = busy || selected.size === 0 || !current;
+  $('clear-selection').disabled = busy || selected.size === 0;
+  const eligible = current?.items.filter(item => item.reference && !completed.has(item.index)) || [];
+  const checked = eligible.filter(item => selected.has(item.index)).length;
+  $('select-page').disabled = busy || !eligible.length;
+  $('select-page').checked = eligible.length > 0 && checked === eligible.length;
+  $('select-page').indeterminate = checked > 0 && checked < eligible.length;
+  $('selection').textContent = selected.size ? `${selected.size} document(s) sélectionné(s), y compris sur les autres pages.` : 'Cochez un ou plusieurs documents dans les résultats.';
   $('previous').disabled = busy || !current || current.page === 0;
   $('next').disabled = busy || !current || (current.page + 1) * current.page_size >= current.total;
   $('spinner').hidden = !busy;
@@ -22,7 +35,7 @@ function updateControls() {
 }
 
 function resetResults() {
-  current = null; selected = null; exported = null;
+  current = null; selected.clear(); completed.clear();
   $('rows').replaceChildren();
   $('table-wrap').hidden = true;
   $('empty').hidden = false;
@@ -32,6 +45,8 @@ function resetResults() {
   $('range').textContent = 'Aucun document sélectionné';
   $('selection').textContent = 'Sélectionnez un document dans les résultats.';
   $('outputs').hidden = true;
+  $('export-results').replaceChildren();
+  $('missing-queries').hidden = true;
   updateControls();
 }
 
@@ -52,27 +67,25 @@ async function request(route, body, download = false) {
 }
 
 function render(result) {
-  current = result; selected = null;
+  current = result;
   $('rows').replaceChildren();
   $('empty').hidden = result.total > 0;
   $('table-wrap').hidden = result.total === 0;
   $('count').textContent = `${result.total.toLocaleString('fr-FR')} document${result.total === 1 ? '' : 's'}`;
   $('empty-title').textContent = 'Aucun document pour cette recherche';
   $('empty-description').textContent = 'Essayez une autre partie du nom ou vérifiez le dossier source.';
+  $('missing-queries').hidden = !result.missing_queries?.length;
+  $('missing-queries').textContent = `Sans résultat : ${(result.missing_queries || []).join(' ; ')}`;
   result.items.forEach(item => {
     const row = document.createElement('tr');
     const choice = document.createElement('td');
     const radio = document.createElement('input');
-    radio.type = 'radio'; radio.name = 'document'; radio.id = `document-${item.index}`;
+    radio.type = 'checkbox'; radio.name = 'document'; radio.id = `document-${item.index}`; radio.value = item.index;
     radio.setAttribute('aria-label', `Sélectionner ${item.name}, dossier ${item.folder}`);
     radio.addEventListener('change', () => {
-      selected = item.index;
-      $('selection').textContent = item.reference
-        ? `${item.name} → ${item.reference}${item.extension} + ${item.reference}.pdf`
-        : 'Ce document ne commence pas par une référence numéro-année : aucun nom de sortie ne peut être extrait.';
-      status(item.reference ? 'Vérifiez les noms proposés, puis validez le renommage et la conversion.'
-        : 'Document trouvé, mais référence absente au début du nom. Conversion indisponible.', item.reference ? '' : 'error');
-      $('outputs').hidden = true; exported = null; updateControls();
+      if (radio.checked) selected.set(item.index, item); else selected.delete(item.index);
+      status('Vérifiez les noms proposés, puis validez le traitement des documents cochés.');
+      updateControls();
     });
     choice.append(radio);
     const details = document.createElement('td');
@@ -81,7 +94,7 @@ function render(result) {
     const folder = document.createElement('span'); folder.className = 'subfolder'; folder.textContent = item.folder === '.' ? 'Dossier source' : item.folder;
     label.append(folder); details.append(label);
     const proposal = document.createElement('span'); proposal.className = 'subfolder';
-    proposal.textContent = item.reference ? `Noms proposés : ${item.reference}${item.extension} et ${item.reference}.pdf` : 'Référence numéro-année absente';
+    proposal.textContent = item.reference ? `Noms proposés : ${item.reference}${item.extension} et ${item.reference}.pdf` : 'Référence numéro-année absente : conversion indisponible';
     label.append(proposal);
     const format = document.createElement('td');
     const tag = document.createElement('span'); tag.className = 'file-tag'; tag.textContent = item.extension.slice(1).toUpperCase();
@@ -116,7 +129,7 @@ $('search-form').addEventListener('submit', async event => {
   try {
     const result = await request('search', Object.fromEntries(fields.map(key => [key, $(key).value.trim()])));
     render(result);
-    status(result.total ? `${result.total} document(s) trouvé(s). Choisissez celui à convertir.` : 'Aucun document trouvé. Vérifiez la référence ou le dossier source.');
+    status(result.total ? `${result.total} document(s) trouvé(s). Cochez ceux à convertir.` : 'Aucun document trouvé. Vérifiez la référence ou le dossier source.');
   } catch (error) { status(error.message, 'error'); }
   finally { busy = false; updateControls(); }
 });
@@ -144,40 +157,96 @@ document.querySelectorAll('[data-folder]').forEach(button => button.addEventList
 async function page(direction) {
   if (busy || !current) return;
   busy = true; updateControls(); status('Chargement des documents…');
-  try { render(await request('page', {search_id: current.search_id, page: current.page + direction})); status('Sélectionnez le document à convertir.'); }
+  try { render(await request('page', {search_id: current.search_id, page: current.page + direction})); status('Votre sélection est conservée entre les pages.'); }
   catch (error) { status(error.message, 'error'); }
   finally { busy = false; updateControls(); }
 }
 $('previous').addEventListener('click', () => page(-1));
 $('next').addEventListener('click', () => page(1));
 
-$('export-button').addEventListener('click', async () => {
-  if (busy || selected === null || !current) return;
-  busy = true; updateControls(); status('Conversion en cours… Cette opération peut prendre jusqu’à deux minutes.');
-  $('outputs').hidden = true;
+$('select-page').addEventListener('change', () => {
+  for (const item of current?.items || []) {
+    if (!item.reference || completed.has(item.index)) continue;
+    if ($('select-page').checked) selected.set(item.index, item); else selected.delete(item.index);
+  }
+  updateControls();
+});
+$('clear-selection').addEventListener('click', () => { selected.clear(); updateControls(); });
+
+async function download(exported, kind) {
+  if (busy) return;
+  busy = true; updateControls();
   try {
-    exported = await request('export', {search_id: current.search_id, index: selected});
-    $('word-path').textContent = exported.word; $('pdf-path').textContent = exported.pdf;
-    $('outputs').hidden = false;
-    status('Export terminé. La copie Word et le PDF sont enregistrés dans leurs dossiers.', 'success');
+    const blob = await request('download', {export_id: exported.export_id, kind}, true);
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = exported[kind].split(/[\\/]/).pop();
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    status('Téléchargement demandé. Le fichier reste également dans son dossier de sortie.', 'success');
   } catch (error) { status(error.message, 'error'); }
   finally { busy = false; updateControls(); }
-});
-
-for (const kind of ['word', 'pdf']) {
-  $(`download-${kind}`).addEventListener('click', async () => {
-    if (busy || !exported) return;
-    busy = true; updateControls();
-    try {
-      const blob = await request('download', {export_id: exported.export_id, kind}, true);
-      const url = URL.createObjectURL(blob), link = document.createElement('a');
-      link.href = url; link.download = exported[kind].split(/[\\/]/).pop();
-      document.body.append(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-      status('Téléchargement demandé. Le fichier reste également dans son dossier de sortie.', 'success');
-    } catch (error) { status(error.message, 'error'); }
-    finally { busy = false; updateControls(); }
-  });
 }
+
+$('export-button').addEventListener('click', () => {
+  if (busy || !selected.size || !current) return;
+  const items = [...selected.values()], references = new Set();
+  if (items.length > 100) { status('Traitez au maximum 100 documents à la fois. Réduisez la sélection.', 'error'); return; }
+  for (const item of items) {
+    if (references.has(item.reference)) {
+      status(`Plusieurs documents produiraient ${item.reference}.pdf. Gardez un seul document pour cette référence.`, 'error');
+      return;
+    }
+    references.add(item.reference);
+  }
+  $('batch-description').textContent = `${items.length} document(s) seront copiés et convertis dans les dossiers indiqués.`;
+  $('batch-preview').replaceChildren();
+  for (const item of items) {
+    const li = document.createElement('li');
+    li.textContent = `${item.name} → ${item.reference}${item.extension} + ${item.reference}.pdf`;
+    $('batch-preview').append(li);
+  }
+  $('confirm-batch').textContent = `Traiter ${items.length} document(s)`;
+  $('batch-dialog').showModal();
+  $('cancel-batch').focus();
+});
+$('cancel-batch').addEventListener('click', () => $('batch-dialog').close());
+$('batch-dialog').addEventListener('close', () => $('export-button').focus());
+$('batch-dialog').addEventListener('keydown', event => {
+  if (event.key !== 'Tab') return;
+  const first = $('cancel-batch'), last = $('confirm-batch');
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
+$('confirm-batch').addEventListener('click', async () => {
+  if (busy || !selected.size || !current) return;
+  const items = [...selected.values()], searchId = current.search_id;
+  $('batch-dialog').close();
+  busy = true; updateControls();
+  $('outputs').hidden = false; $('export-results').replaceChildren();
+  let succeeded = 0, failed = 0;
+  for (const [position, item] of items.entries()) {
+    status(`Traitement ${position + 1}/${items.length} : ${item.name}. Jusqu’à deux minutes par document.`);
+    const record = document.createElement('article'); record.className = 'batch-result';
+    const heading = document.createElement('h4'); heading.textContent = item.name; record.append(heading);
+    try {
+      const exported = await request('export', {search_id: searchId, index: item.index});
+      succeeded++; selected.delete(item.index); completed.add(item.index);
+      for (const kind of ['word', 'pdf']) {
+        const line = document.createElement('div'), path = document.createElement('p'); path.textContent = exported[kind];
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary';
+        button.textContent = kind === 'pdf' ? 'Télécharger PDF' : 'Télécharger Word'; button.disabled = true;
+        button.addEventListener('click', () => download(exported, kind));
+        line.append(path, button); record.append(line);
+      }
+    } catch (error) {
+      failed++;
+      const message = document.createElement('p'); message.className = 'batch-error'; message.textContent = error.message; record.append(message);
+    }
+    $('export-results').append(record);
+    $('batch-summary').textContent = `${succeeded} réussi(s) · ${failed} échec(s) · ${items.length - position - 1} restant(s)`;
+  }
+  status(`Traitement terminé : ${succeeded} réussi(s), ${failed} échec(s). Les documents en échec restent cochés.`, failed ? 'error' : 'success');
+  busy = false; updateControls();
+});
 window.addEventListener('beforeunload', event => { if (busy) { event.preventDefault(); event.returnValue = ''; } });
 updateControls();

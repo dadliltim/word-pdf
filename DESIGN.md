@@ -48,7 +48,9 @@ Contrôles rectangulaires natifs sur le bureau. Sur le web, panneaux de rayon 10
 
 `Application._button` possède les actions, `_message` le statut persistant, `_work` le blocage des doubles soumissions. `ttk.Entry` possède les champs, `ttk.Treeview` la sélection simple, `filedialog.askdirectory` le choix de dossier natif Windows. Le système possède la géométrie des dialogues et des barres de défilement. Pas d'équivalent existant : dépôt initialement vide.
 
-Le web réutilise `core.py` pour les règles de fichiers. Les propriétaires des formulaires, radios, statuts, pagination et téléchargements sont documentés dans `UX-CONTRACT.md`. Les styles globaux de défilement appartiennent à `static/app.css` avec tokens thumb/track/hover/active, fallback WebKit et forced-colors. Seuls les spinners tournent ; reduced-motion supprime animations et transitions.
+Le web réutilise `core.py` pour les règles de fichiers. Les propriétaires des formulaires, cases à cocher, statuts, pagination et téléchargements sont documentés dans `UX-CONTRACT.md`. Les styles globaux de défilement appartiennent à `static/app.css` avec tokens thumb/track/hover/active, fallback WebKit et forced-colors. Seuls les spinners tournent ; reduced-motion supprime animations et transitions.
+
+La sélection web utilise désormais des cases à cocher natives, avec compteur global et sélection de la page. `batch-dialog` reprend le rayon des panneaux, les boutons et les couleurs existants ; son contenu défile naturellement dans une hauteur maximale de 85vh. Le bilan du lot utilise des blocs de résultats avec les mêmes chemins et boutons de téléchargement, sans nouvelle palette.
 
 ## Do's and Don'ts
 

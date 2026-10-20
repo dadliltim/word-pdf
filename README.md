@@ -6,7 +6,17 @@ Application interne pour Windows, en version bureau ou web locale. Recherche un 
 
 Après avoir installé les prérequis ci-dessous, double-cliquer sur **Lancer-Web.bat**. Le navigateur s'ouvre automatiquement ; garder la fenêtre du lanceur ouverte pendant l'utilisation. Le bouton **Parcourir** ouvre le sélecteur de dossiers Windows. On peut également saisir les chemins, y compris un chemin réseau accessible au compte Windows.
 
-Le parcours reste le même : trois dossiers → référence → recherche → sélection d'un document → **Créer la copie et le PDF**. Les fichiers sont enregistrés dans les dossiers choisis ; les boutons de téléchargement permettent aussi de les récupérer via le navigateur. Un téléchargement peut créer une copie supplémentaire dans le dossier Téléchargements selon les réglages du navigateur.
+Le parcours reste le même : trois dossiers → recherche → documents cochés → validation du lot → copies et PDF. Les fichiers sont enregistrés dans les dossiers choisis ; les boutons de téléchargement permettent aussi de les récupérer via le navigateur. Un téléchargement peut créer une copie supplémentaire dans le dossier Téléchargements selon les réglages du navigateur.
+
+### Recherche et conversion de plusieurs fichiers (web)
+
+Saisir par exemple `0677-2026 ; 0680-2026 ; MANAZIL` : le point-virgule sépare les recherches (jusqu'à 20 demandes, 300 caractères au total). Les résultats sont réunis sans afficher plusieurs fois le même fichier. Les demandes sans correspondance sont indiquées.
+
+Cocher les documents voulus ou **Sélectionner cette page**. La sélection est conservée entre les pages ; **Tout désélectionner** la vide. Les documents sans référence numéro-année restent visibles mais ne peuvent pas être cochés. Jusqu'à 100 documents par traitement. Le bouton **Valider le renommage et convertir** ouvre un récapitulatif des documents et des deux noms de sortie ; **Annuler** n'écrit rien, **Traiter N document(s)** démarre la conversion séquentielle.
+
+Deux documents ayant la même référence produiraient le même PDF : conserver un seul de ces documents dans le lot. Une erreur sur un fichier n'empêche pas les suivants d'être traités. Le bilan présente les réussites et erreurs par document, avec un téléchargement Word/PDF pour chaque réussite. Les fichiers réussis sont décochés, les erreurs restent sélectionnées pour une reprise manuelle. Garder l'onglet et le lanceur ouverts pendant le traitement ; aucun redémarrage automatique après interruption.
+
+La version bureau conserve le traitement d'un document à la fois ; elle bénéficie aussi de la recherche par plusieurs demandes.
 
 Les dossiers sont préremplis dans les deux versions et restent modifiables :
 

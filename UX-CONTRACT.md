@@ -7,7 +7,7 @@ Source métier : demande utilisateur dans cette session, recherche d'une référ
 | Capability | Canonical owner | Source of truth | Allowed variants | Verification |
 |---|---|---|---|---|
 | Form | `validate`, `updateControls` dans `static/app.js` | Ce contrat : champs natifs étiquetés, erreurs inline, premier invalide focalisé | Recherche explicite | `tests/browser_check.py` |
-| Table Selection | `render` dans `static/app.js` | Ce contrat : radio natif, un document, sélection annulée au changement de page | Une ligne de la page courante | `tests/browser_check.py` |
+| Table Selection | `selected`, `render`, `updateControls` dans `static/app.js` | Ce contrat : cases natives, sélection conservée entre pages, effacée au changement de recherche | Lignes individuelles, sélection de la page, tout désélectionner | `tests/browser_check.py` |
 | Scrollbar | `static/app.css` | DESIGN.md : baseline globale, standards et WebKit, forced-colors | Tableau borné et document naturel | `tests/browser_check.py` |
 
 Autres propriétaires : `_page` dans `web.py` pour la pagination serveur de 25 et les bornes (`tests/test_web.py`) ; `/api/browse` pour le dialogue système avec saisie manuelle équivalente (validation Windows restante) ; `status` dans `static/app.js` pour la région live persistante (`tests/browser_check.py`) ; `core.export_document` pour la conservation des originaux et le refus d'écrasement (`tests/test_core.py`, `tests/test_web.py`).
@@ -20,7 +20,15 @@ Le champ accepte une référence, des mots du nom ou le nom complet et conserve 
 
 Les chemins et références restent en mémoire uniquement, sans URL, localStorage ou journal HTTP. Le rechargement réinitialise la page ; avertissement du navigateur uniquement si une opération est active. Le serveur garde jusqu'à 20 recherches et 100 références d'export en mémoire, puis évince les plus anciennes, sans supprimer les fichiers. Une recherche expirée doit être relancée. Une réponse réseau perdue après export peut masquer une réussite : le message demande de vérifier les dossiers avant de réessayer.
 
-## Limite d'accès
+## Traitement par lot
+
+Les points-virgules séparent jusqu'à 20 recherches (300 caractères). Les résultats sont une union dédupliquée, et les demandes sans résultat sont affichées. Chaque espace entre mots reste une recherche de tous ces mots dans un même nom. Les noms complets contenant un point-virgule ne peuvent donc pas être recherchés littéralement en une seule demande ; utiliser un autre fragment du nom.
+
+La sélection peut couvrir plusieurs pages, avec un compteur global et une case « Sélectionner cette page » à état intermédiaire. Les fichiers sans référence ou déjà réussis dans cette recherche sont désactivés. Une nouvelle recherche efface la sélection. Maximum 100 documents par lot ; les variantes produisant le même PDF sont refusées avant confirmation.
+
+`batch-dialog` est le propriétaire canonique de la confirmation : dialogue HTML natif modal, titre et description accessibles, aperçu de tous les noms, focus initial sur Annuler, Escape annule, focus rendu au bouton de traitement. Aucun export avant le clic sur « Traiter N document(s) ». `confirm-batch` envoie une requête par fichier, séquentiellement, avec état occupé et progression réelle par compteur. Les réussites sont retirées de la sélection ; les erreurs restent cochées. Une panne de réseau peut laisser une réussite non confirmée : vérifier les dossiers avant de reprendre. Le bilan persiste jusqu'à une nouvelle recherche ou un nouveau traitement, sans stockage local.
+
+## Limite d'accès du serveur
 
 Application web locale mono-poste, écoute uniquement sur `127.0.0.1`. Vérification Host, Origin et jeton de démarrage sur les opérations, pas de CORS. Les téléchargements sont limités aux sorties enregistrées par le processus. Ne pas exposer ce serveur sur Internet ou le réseau interne sans une tâche distincte ajoutant authentification, autorisations et déploiement serveur. Les dossiers sont ceux du PC qui exécute Python ; un navigateur distant ne donne pas accès automatiquement à ses propres dossiers.
 

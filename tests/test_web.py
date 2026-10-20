@@ -110,6 +110,13 @@ class WebTest(unittest.TestCase):
         self.assertEqual([item['reference'] for item in result['items']], ['0677-2026', '0788-2026', None])
         self.assertEqual(self.api('export', {'search_id': result['search_id'], 'index': 2})[0], 400)
 
+    def test_multiple_searches_report_missing_queries(self):
+        (self.root / 'source/0677-2026 MANAZIL.docx').touch()
+        status, result = self.api('search', self.body | {'reference': '0677-2026; 0680-2026; MANAZIL; absent'})
+        self.assertEqual(status, 200)
+        self.assertEqual(result['total'], 2)
+        self.assertEqual(result['missing_queries'], ['absent'])
+
     def test_busy_conversion_is_rejected(self):
         _, search = self.api('search', self.body)
         self.server.conversion.acquire()

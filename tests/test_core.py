@@ -80,6 +80,17 @@ class DocumentsTest(unittest.TestCase):
         path.touch()
         self.assertEqual(find_documents(self.source, 'rapport'), [path])
 
+    def test_multiple_queries_union_and_deduplication(self):
+        other = self.source / '0677-2026 MANAZIL.doc'
+        other.touch()
+        result = find_documents(self.source, '0680-2026; 0677-2026; MANAZIL; absent')
+        self.assertEqual(set(result), {self.document, other})
+        self.assertEqual(len(result), 2)
+        self.assertEqual(set(find_documents(self.source, '0680-2026\n0677-2026')), {self.document, other})
+        for query in ('; ;', '""', ';'.join(str(i) for i in range(21))):
+            with self.assertRaises(DocumentError):
+                find_documents(self.source, query)
+
     def test_success_preserves_original_and_names_outputs(self):
         original = self.document.read_bytes()
         word, pdf = self.export()

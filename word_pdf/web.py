@@ -12,7 +12,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from .core import DocumentError, export_document, find_documents, validate_reference
+from .core import DocumentError, export_document, find_documents, validate_reference, search_queries, matches_query
 
 STATIC = Path(__file__).with_name("static")
 PAGE_SIZE = 25
@@ -186,7 +186,9 @@ class Handler(BaseHTTPRequestHandler):
                 return validate_reference(path.stem)
             except DocumentError:
                 return None
+        missing = [query for query in search_queries(reference) if not any(matches_query(path.name, query) for path in paths)]
         return {"search_id": key, "reference": reference, "page": page, "total": len(paths), "page_size": PAGE_SIZE,
+                "missing_queries": missing,
                 "items": [{"index": index, "name": path.name, "folder": str(path.parent.relative_to(source)),
                            "reference": suggested(path), "extension": path.suffix.lower()}
                           for index, path in enumerate(paths[start:start + PAGE_SIZE], start)]}
