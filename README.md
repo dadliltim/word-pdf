@@ -8,6 +8,14 @@ Après avoir installé les prérequis ci-dessous, double-cliquer sur **Lancer-We
 
 Le parcours reste le même : trois dossiers → référence → recherche → sélection d'un document → **Créer la copie et le PDF**. Les fichiers sont enregistrés dans les dossiers choisis ; les boutons de téléchargement permettent aussi de les récupérer via le navigateur. Un téléchargement peut créer une copie supplémentaire dans le dossier Téléchargements selon les réglages du navigateur.
 
+Les dossiers sont préremplis dans les deux versions et restent modifiables :
+
+- Source : `\\Srv\data`
+- Copies Word : `\\srv\gen$\Actes`
+- PDF : `\\srv\gen$\Actespdf`
+
+Ces chemins réseau nécessitent que le compte Windows utilisé ait accès au partage (lecture de la source, écriture dans les deux destinations). L'application utilise les droits Windows existants, sans enregistrer de mot de passe.
+
 Lancement manuel : `py -3 -m word_pdf.web`. Si le port est occupé : `py -3 -m word_pdf.web --port 8766`. Arrêter le serveur avec Ctrl+C dans sa fenêtre. `--no-browser` désactive l'ouverture automatique du navigateur.
 
 Cette version web fonctionne **localement sur le PC Windows**, sans hébergement externe ni dépendance Python supplémentaire. Les dossiers sont ceux du PC exécutant Python. Le serveur écoute uniquement en boucle locale et ne fournit pas d'accès multi-utilisateur depuis le réseau ; un déploiement partagé nécessiterait une authentification, des droits d'accès et une configuration serveur spécifiques.

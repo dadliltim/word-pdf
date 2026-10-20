@@ -26,7 +26,9 @@ class Application(tk.Tk):
         self.search_snapshot = None
         self.page = 0
         self.page_size = 100
-        self.fields = {key: tk.StringVar() for key in ("source", "documents", "pdf", "reference")}
+        defaults = {"source": r"\\Srv\data", "documents": r"\\srv\gen$\Actes",
+                    "pdf": r"\\srv\gen$\Actespdf", "reference": ""}
+        self.fields = {key: tk.StringVar(value=value) for key, value in defaults.items()}
         self.status = tk.StringVar(value="Choisissez vos dossiers, puis recherchez une référence.")
         self.output = tk.StringVar(value="Les deux fichiers exportés apparaîtront ici.")
         self.controls = []

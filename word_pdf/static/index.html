@@ -22,19 +22,19 @@
     <p class="muted">Une source, deux destinations.<br>Vos originaux restent à leur place.</p>
     <div class="folder-field">
       <label for="source"><span class="folder-number">01</span> Documents à rechercher</label>
-      <input id="source" name="source" type="text" placeholder="C:\Documents\Sources" autocomplete="off" spellcheck="false" aria-describedby="source-help source-error">
+      <input id="source" name="source" type="text" value="\\Srv\data" placeholder="\\Srv\data" autocomplete="off" spellcheck="false" aria-describedby="source-help source-error">
       <p class="field-error" id="source-error"></p>
       <div class="field-bottom"><span id="source-help">Sous-dossiers inclus</span><button type="button" class="browse" disabled data-folder="source">Parcourir <span aria-hidden="true">→</span></button></div>
     </div>
     <div class="folder-field">
       <label for="documents"><span class="folder-number">02</span> Copies Word renommées</label>
-      <input id="documents" name="documents" type="text" placeholder="C:\Documents\Copies Word" autocomplete="off" spellcheck="false" aria-describedby="documents-error">
+      <input id="documents" name="documents" type="text" value="\\srv\gen$\Actes" placeholder="\\srv\gen$\Actes" autocomplete="off" spellcheck="false" aria-describedby="documents-error">
       <p class="field-error" id="documents-error"></p>
       <div class="field-bottom"><span>.doc et .docx</span><button type="button" class="browse" disabled data-folder="documents">Parcourir <span aria-hidden="true">→</span></button></div>
     </div>
     <div class="folder-field">
       <label for="pdf"><span class="folder-number">03</span> Fichiers PDF</label>
-      <input id="pdf" name="pdf" type="text" placeholder="C:\Documents\PDF" autocomplete="off" spellcheck="false" aria-describedby="pdf-error">
+      <input id="pdf" name="pdf" type="text" value="\\srv\gen$\Actespdf" placeholder="\\srv\gen$\Actespdf" autocomplete="off" spellcheck="false" aria-describedby="pdf-error">
       <p class="field-error" id="pdf-error"></p>
       <div class="field-bottom"><span>Documents convertis</span><button type="button" class="browse" disabled data-folder="pdf">Parcourir <span aria-hidden="true">→</span></button></div>
     </div>
