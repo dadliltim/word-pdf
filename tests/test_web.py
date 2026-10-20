@@ -121,6 +121,9 @@ class WebTest(unittest.TestCase):
         status, result = self.api('prepare-search', {'text': 'Cherche les actes 0677 et 0680 en 2026'})
         self.assertEqual(status, 200)
         self.assertEqual(result['queries'], ['0677-2026', '0680-2026'])
+        status, result = self.api('prepare-search', {'text': 'Cherche les actes 0688 au 0699 de l’année 2026'})
+        self.assertEqual(status, 200)
+        self.assertEqual(result['queries'], [f'{number:04d}-2026' for number in range(688, 700)])
         self.assertEqual(list((self.root / 'word').iterdir()), [])
         self.assertEqual(list((self.root / 'pdf').iterdir()), [])
 

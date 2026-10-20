@@ -22,11 +22,32 @@ class AssistantTest(unittest.TestCase):
 
     def test_two_explicit_years_require_clarification(self):
         for text in ('Cherche les actes 0677 et 0680 en 2025 ou en 2026',
-                     'Cherche les actes 0677 et 0680 en 2025 ou 2026',
-                     'Cherche les actes 0677 à 0680 en 2026'):
+                     'Cherche les actes 0677 et 0680 en 2025 ou 2026'):
             result = prepare_search(text)
             self.assertEqual(result['queries'], [])
             self.assertTrue(result['warnings'])
+
+    def test_inclusive_range_keeps_leading_zeroes(self):
+        for connector in ('au', 'à', 'jusqu’à'):
+            result = prepare_search(f'Cherche les actes 0688 {connector} 0699 de l’année 2026')
+            self.assertEqual(result['queries'], [f'{number:04d}-2026' for number in range(688, 700)])
+            self.assertEqual(result['warnings'], [])
+
+    def test_range_combines_with_other_searches_without_duplicates(self):
+        result = prepare_search('Cherche 0688-2026 et les actes 0688 au 0690 en 2026 et « MANAZIL »')
+        self.assertEqual(set(result['queries']), {'0688-2026', '0689-2026', '0690-2026', 'MANAZIL'})
+        self.assertEqual(len(result['queries']), 4)
+
+    def test_range_bounds_year_and_size_are_checked(self):
+        for text in ('Cherche les actes 0699 au 0688 en 2026', 'Cherche les actes 0688 au 0699',
+                     'Cherche les actes 0688 au 0699 en 2025 ou 2026'):
+            result = prepare_search(text)
+            self.assertEqual(result['queries'], [])
+            self.assertTrue(result['warnings'])
+        with self.assertRaises(DocumentError):
+            prepare_search('Cherche les actes 0001 au 999999999999 en 2026')
+        self.assertEqual(prepare_search('actes 9 au 12 en 2026')['queries'], ['9-2026', '10-2026', '11-2026', '12-2026'])
+        self.assertEqual(prepare_search('actes 0688 au 0688 en 2026')['queries'], ['0688-2026'])
 
     def test_names_quoted_and_simple_keyword_request(self):
         self.assertEqual(prepare_search('cherche MANAZIL')['queries'], ['MANAZIL'])

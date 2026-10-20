@@ -24,6 +24,8 @@ Les chemins et références restent en mémoire uniquement, sans URL, localStora
 
 ### Préparation depuis du texte libre
 
+Les plages « 0688 au 0699 de l’année 2026 » sont développées dans l'ordre croissant, bornes incluses et zéros initiaux conservés ; `à` et `jusqu’à` sont équivalents. Pas de développement si année absente/ambiguë ou bornes inversées. Au-delà de 20 références, refus explicite avant allocation de la liste et sans troncature. La proposition reste modifiable et ne lance aucune recherche automatique.
+
 `assistant.prepare_search` et `/api/prepare-search` possèdent l'interprétation locale (sans LLM). `assistant-form` possède la saisie et les erreurs inline ; `assistant-proposal` affiche une proposition modifiable. `use-proposal` copie uniquement la proposition vers le champ de recherche et lui rend le focus, sans déclencher recherche ou export. Une modification de la demande invalide immédiatement la proposition antérieure. Pendant une requête, champs et textarea sont désactivés. La demande n'est ni journalisée ni persistée. Le mode local et ses limites sont nommés dans l'interface ; aucune compréhension générale n'est promise. Vérification : `tests/test_assistant.py`, `tests/test_web.py`, `tests/browser_check.py`.
 
 Les points-virgules séparent jusqu'à 20 recherches (300 caractères). Les résultats sont une union dédupliquée, et les demandes sans résultat sont affichées. Chaque espace entre mots reste une recherche de tous ces mots dans un même nom. Les noms complets contenant un point-virgule ne peuvent donc pas être recherchés littéralement en une seule demande ; utiliser un autre fragment du nom.

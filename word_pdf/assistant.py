@@ -24,19 +24,35 @@ def prepare_search(text: str) -> dict:
         return ' ' * len(match.group(0))
 
     work = re.sub(r'(?<![\w/-])([0-9]{1,12})-([0-9]{4})(?![\w/-])', collect_reference, work)
+    ranges = []
+
+    def collect_range(match):
+        ranges.append((match.group(1), match.group(2)))
+        return ' ' * len(match.group(0))
+
+    work = re.sub(r"(?<![\w/-])([0-9]{1,12})\s+(?:à|au|jusqu[’\x27]à)\s+([0-9]{1,12})(?![\w/-])",
+                  collect_range, work, flags=re.I)
     # Une année n'est partagée qu'avec une indication explicite : année 2026, en 2026, de 2026.
     years = set(re.findall(r"(?:ann[ée]e\s+|\ben\s+|\bde\s+|\bpour\s+)((?:19|20)[0-9]{2})\b", work, re.I))
     if years:
         years.update(re.findall(r'\b(?:19|20)[0-9]{2}\b', work))
-    has_range = bool(re.search(r'[0-9]+\s+(?:à|au|jusqu[’\x27]à)\s+[0-9]+', work, re.I))
-    if has_range:
-        warnings.append('Les plages de numéros ne sont pas développées. Énumérez les numéros voulus avec « et ».')
+    for first, last in ranges:
+        start, end = int(first), int(last)
+        if end < start:
+            warnings.append('La fin de la plage doit être supérieure ou égale au début. Corrigez les bornes.')
+            continue
+        if end - start + 1 > 20:
+            raise DocumentError('Une plage est limitée à 20 références. Divisez votre demande en plusieurs plages plus petites.')
+        if len(years) != 1:
+            warnings.append('Précisez une seule année pour la plage, par exemple « actes 0688 au 0699 de l’année 2026 ».')
+            continue
+        width = max(len(first), len(last)) if first.startswith('0') or last.startswith('0') else 0
+        year = next(iter(years))
+        queries.extend(f'{str(number).zfill(width)}-{year}' for number in range(start, end + 1))
     groups = list(re.finditer(
         r"\b(?:actes?|r[ée]f[ée]rences?|num[ée]ros?|dossiers?|cherche|recherche|trouve)\s+"
         r"(?:les\s+)?(?:n[°o]\s*)?([0-9]{1,12}(?:\s*(?:,|et|;)\s*[0-9]{1,12})*)\b", work, re.I))
     for group in groups:
-        if has_range:
-            continue
         if re.match(r"\s+(?:actes?|documents?|fichiers?)\b", work[group.end():], re.I):
             continue  # « cherche 2 documents » est un compte, pas une référence.
         numbers = re.findall(r'[0-9]+', group.group(1))
@@ -51,7 +67,7 @@ def prepare_search(text: str) -> dict:
         target = (match.group(1) or match.group(2)).strip(' ,')
         if target and not re.search(r'[0-9]', target):
             queries.append(target)
-    if not queries and not groups:
+    if not queries and not groups and not ranges:
         target = re.sub(r"^(?:(?:bonjour|s['’]il vous pla[îi]t)[, ]+)?(?:cherche(?:z)?|recherche|trouve(?:z)?)\s+(?:moi\s+)?", '', work, flags=re.I).strip(' .')
         if target and not re.search(r'[0-9]', target) and len(target.split()) <= 8:
             queries.append(target)
