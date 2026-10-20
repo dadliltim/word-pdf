@@ -86,13 +86,26 @@ function render(result) {
   updateControls();
 }
 
+function extractReference(value) {
+  const normalized = value.trim().replace(/^["'“”]+|["'“”]+$/g, '')
+    .replace(/[٠-٩]/g, char => String(char.charCodeAt(0) - 0x660))
+    .replace(/[۰-۹]/g, char => String(char.charCodeAt(0) - 0x6f0))
+    .replace(/[０-９]/g, char => String(char.charCodeAt(0) - 0xff10))
+    .replace(/\s*[-‐‑‒–—−－]\s*/g, '-');
+  return normalized.match(/^([0-9]{1,12}-[0-9]{4})(?=$|[\s_.]|-(?![0-9]))/)?.[1] || null;
+}
+
 function validate() {
   let first = null;
   for (const key of fields) {
     const value = $(key).value.trim();
     let message = '';
     if (!value) message = key === 'reference' ? 'Saisissez une référence.' : 'Choisissez un dossier existant.';
-    else if (key === 'reference' && !/^[0-9]{1,12}-[0-9]{4}$/.test(value)) message = 'Utilisez le format numéro-année, par exemple 0680-2026.';
+    else if (key === 'reference') {
+      const reference = extractReference(value);
+      if (!reference) message = 'Saisissez une référence numéro-année ou un nom commençant par 0677-2026.';
+      else $(key).value = reference;
+    }
     $(`${key}-error`).textContent = message;
     $(key).setAttribute('aria-invalid', String(!!message));
     if (message && !first) first = $(key);

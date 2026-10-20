@@ -16,6 +16,8 @@ Autres propriétaires : `_page` dans `web.py` pour la pagination serveur de 25 e
 
 Trois dossiers → référence → recherche explicite → choix du document → export → chemins et téléchargement. Les paramètres restent présents après une erreur. Les actions sont désactivées pendant une requête pour éviter les doubles soumissions et les réponses obsolètes. IME : Entrée pendant composition ne soumet pas la recherche. Le bouton Effacer vide immédiatement la recherche et restaure le focus. Aucune recherche automatique à chaque frappe.
 
+Le champ accepte aussi le nom complet du fichier et extrait uniquement sa référence initiale. Espaces autour du tiret, tirets typographiques et chiffres arabes/persans/pleine largeur sont normalisés ; les zéros initiaux sont conservés. Le champ affiche la référence courte avant l'envoi. Le serveur applique la même règle et les noms d'export restent limités à cette référence.
+
 Les chemins et références restent en mémoire uniquement, sans URL, localStorage ou journal HTTP. Le rechargement réinitialise la page ; avertissement du navigateur uniquement si une opération est active. Le serveur garde jusqu'à 20 recherches et 100 références d'export en mémoire, puis évince les plus anciennes, sans supprimer les fichiers. Une recherche expirée doit être relancée. Une réponse réseau perdue après export peut masquer une réussite : le message demande de vérifier les dossiers avant de réessayer.
 
 ## Limite d'accès

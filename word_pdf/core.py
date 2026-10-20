@@ -13,11 +13,18 @@ class DocumentError(Exception):
     """Erreur pouvant être présentée à l'utilisateur."""
 
 
+def normalize_name(value: str) -> str:
+    digits = "٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹０１２３４５６７８９"
+    value = value.translate(str.maketrans({char: str(index % 10) for index, char in enumerate(digits)}))
+    return re.sub(r"\s*[-‐‑‒–—−－]\s*", "-", value.strip().strip('"\'“”'))
+
+
 def validate_reference(value: str) -> str:
-    value = value.strip()
-    if not re.fullmatch(r"[0-9]{1,12}-[0-9]{4}", value):
-        raise DocumentError("Saisissez une référence comme 0680-2026 (numéro-année).")
-    return value
+    """Accepte une référence ou un nom complet dont elle est le préfixe."""
+    match = re.match(r"^([0-9]{1,12}-[0-9]{4})(?=$|[\s_.]|-(?![0-9]))", normalize_name(value))
+    if not match:
+        raise DocumentError("Saisissez une référence numéro-année, ou collez un nom commençant par 0677-2026.")
+    return match.group(1)
 
 
 def find_documents(source: Path, reference: str, excluded: tuple[Path, ...] = ()) -> list[Path]:
@@ -38,7 +45,7 @@ def find_documents(source: Path, reference: str, excluded: tuple[Path, ...] = ()
         for name in sorted(files):
             path = Path(folder) / name
             if (path.suffix.lower() in {".doc", ".docx"} and not name.startswith("~$")
-                    and pattern.match(path.stem) and not path.is_symlink()):
+                    and pattern.match(normalize_name(path.stem)) and not path.is_symlink()):
                 found.append(path)
     return sorted(found, key=lambda path: str(path).casefold())
 
@@ -114,7 +121,7 @@ def export_document(document: Path, reference: str, documents_dir: Path, pdf_dir
         raise DocumentError("Choisissez deux dossiers de sortie différents : documents Word et PDF.")
     if document.suffix.lower() not in {".doc", ".docx"} or not document.is_file():
         raise DocumentError("Le document sélectionné n’est plus disponible. Relancez la recherche.")
-    if not re.match(r"^" + re.escape(reference) + r"(?=$|[\s_]|-(?![0-9]))", document.stem, re.I):
+    if not re.match(r"^" + re.escape(reference) + r"(?=$|[\s_]|-(?![0-9]))", normalize_name(document.stem), re.I):
         raise DocumentError("Le document sélectionné ne correspond pas à cette référence.")
     for folder in (documents_dir, pdf_dir):
         if not folder.is_dir():

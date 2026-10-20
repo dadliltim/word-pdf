@@ -48,6 +48,24 @@ class DocumentsTest(unittest.TestCase):
         with self.assertRaises(DocumentError):
             find_documents(self.root / "absent", "0680-2026")
 
+    def test_extracts_reference_from_full_filename_and_normalizes_paste(self):
+        for value in (
+            '0677-2026 VI -  MANAZIL BANI - DAR AL AMANE  - SAID OUFFA  226382-13    VALIDEE.docx',
+            ' 0677 – 2026 ', '"0677‑2026 VALIDEE.doc"', '٠٦٧٧-٢٠٢٦', '۰۶۷۷ − ۲۰۲۶', '０６７７－２０２６',
+        ):
+            with self.subTest(value=value):
+                self.assertEqual(validate_reference(value), '0677-2026')
+
+    def test_full_filename_search_and_export_use_only_prefix(self):
+        name = '0677-2026 VI -  MANAZIL BANI - DAR AL AMANE  - SAID OUFFA  226382-13    VALIDEE.docx'
+        document = self.source / name
+        document.write_bytes(b'original')
+        self.assertEqual(find_documents(self.source, name), [document])
+        word, pdf = export_document(document, name, self.words, self.pdfs, self.converter)
+        self.assertEqual(word.name, '0677-2026.docx')
+        self.assertEqual(pdf.name, '0677-2026.pdf')
+        self.assertEqual(document.read_bytes(), b'original')
+
     def test_success_preserves_original_and_names_outputs(self):
         original = self.document.read_bytes()
         word, pdf = self.export()

@@ -24,7 +24,7 @@ On peut aussi lancer `py -3 -m word_pdf` depuis le dossier du projet.
 
 1. Choisir le dossier source ; ses sous-dossiers sont également explorés.
 2. Choisir deux dossiers de sortie existants et différents : **Copies Word** et **Fichiers PDF**. Les dossiers de sortie sont exclus de la recherche lorsqu'ils se trouvent sous le dossier source. Ne pas choisir le dossier source lui-même comme dossier de sortie.
-3. Saisir `0680-2026` et cliquer sur **Rechercher dans les sous-dossiers**.
+3. Saisir `0680-2026`, ou coller le nom complet commençant par cette référence, puis lancer la recherche. Les espaces autour du tiret, les tirets typographiques et les chiffres arabes sont normalisés automatiquement.
 4. Sélectionner le document souhaité s'il existe plusieurs correspondances.
 5. Cliquer sur **Copier et convertir en PDF**.
 
