@@ -1,0 +1,3 @@
+# Distribution Angular générée ; conserver les licences tierces à l'identique.
+word_pdf/angular/** linguist-generated=true
+word_pdf/angular/3rdpartylicenses.txt -whitespace

@@ -17,6 +17,15 @@ from word_pdf.core import export_document
 from word_pdf.web import LocalServer
 
 
+def check_accessibility(page):
+    axe = Path(__file__).resolve().parents[1] / 'frontend/node_modules/axe-core/axe.min.js'
+    if not axe.exists():
+        raise RuntimeError('Installez les dépendances frontend avec npm ci avant le contrôle navigateur.')
+    page.evaluate(axe.read_text(encoding='utf-8'))
+    violations = page.evaluate("async () => (await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}})).violations")
+    assert not violations, [(item['id'], item['help'], [node['target'] for node in item['nodes']]) for item in violations]
+
+
 def main():
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
@@ -42,9 +51,12 @@ def main():
                 browser = p.chromium.launch(**options)
                 page = browser.new_page(viewport={'width': 1440, 'height': 1050}, reduced_motion='reduce')
                 errors = []
+                security_errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
+                page.on('console', lambda message: security_errors.append(message.text) if 'Content Security Policy' in message.text else None)
                 page.goto(f'http://127.0.0.1:{server.server_port}')
-                expect(page.locator('.local')).to_contain_text('v1.0.3')
+                expect(page.locator('.local')).to_contain_text('v2.0.0')
+                expect(page.locator('app-root')).to_have_attribute('ng-version', __import__('re').compile(r'^21\.'))
                 expect(page.locator('.study-signature strong')).to_have_text('Etude Maitre Souad CHABAB')
                 expect(page.locator('.study-signature span')).to_have_text('By Hatim DALIL')
                 assert page.locator('.study-signature').evaluate('e => { const title = e.getBoundingClientRect(), bar = e.closest("header").getBoundingClientRect(); return Math.abs(title.left + title.width / 2 - bar.left - bar.width / 2) < 2; }')
@@ -52,6 +64,7 @@ def main():
                 expect(page.locator('#source')).to_have_value(r'\\Srv\data')
                 expect(page.locator('#documents')).to_have_value(r'\\srv\gen$\Actes')
                 expect(page.locator('#pdf')).to_have_value(r'\\srv\gen$\Actespdf')
+                check_accessibility(page)
                 expect(page.locator('#search-form')).to_be_visible()
                 expect(page.locator('#free-request')).not_to_be_visible()
                 page.locator('.assistant summary').click()
@@ -101,6 +114,7 @@ def main():
                 expect(page.locator('#batch-dialog')).to_be_visible()
                 expect(page.locator('#cancel-batch')).to_be_focused()
                 expect(page.locator('#batch-preview')).to_contain_text('0680-2026.pdf')
+                check_accessibility(page)
                 assert not (root / 'PDF/0680-2026.pdf').exists()
                 page.locator('#confirm-batch').click()
                 expect(page.locator('#spinner')).to_be_visible()
@@ -162,9 +176,15 @@ def main():
                 expect(page.locator('#status')).to_contain_text('dossier source')
                 expect(page.locator('#source')).to_have_value(str(root / 'absent'))
                 page.locator('#source').fill(str(document.parent))
+                page.route('**/api/search', lambda route: route.abort())
+                page.locator('#search-button').click()
+                expect(page.locator('#status')).to_contain_text('Le serveur ne répond pas')
+                expect(page.locator('#reference')).to_have_value('0680-2026')
+                page.unroute('**/api/search')
                 page.locator('#search-button').click()
                 expect(page.locator('#rows tr')).to_have_count(25)
                 page.set_viewport_size({'width': 390, 'height': 844})
+                check_accessibility(page)
                 expect(page.locator('.study-signature')).to_be_visible()
                 page.screenshot(path='/tmp/word-pdf-web-mobile.png', full_page=True)
                 assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
@@ -206,6 +226,7 @@ def main():
                 expect(page.locator('#export-results')).to_contain_text('0627-2026.pdf')
                 assert arabic.read_bytes() == b'Arabic filename document fixture'
                 assert not errors, errors
+                assert not security_errors, security_errors
                 browser.close()
                 print('Navigateur : validation, recherche vide, sélection, état en cours, export simulé, téléchargement, collision, pagination, erreur serveur, clavier et écran étroit : OK.')
         finally:

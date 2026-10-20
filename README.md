@@ -2,7 +2,9 @@
 
 Application interne pour Windows, en version bureau ou web locale. Recherche un document `.doc` ou `.docx` par référence ou par mots du nom, en copie le contenu sous un nom court, puis produit un PDF dans un autre dossier. Les originaux restent inchangés. Aucun document n'est envoyé à un service en ligne.
 
-## Version web
+## Version web Angular
+
+La version 2.0.0 utilise **Angular 21** pour toute l'interface : composants standalone, formulaires typés, sélection multiple, assistant local et progression. Les fichiers compilés sont inclus dans `word_pdf/angular` : **aucune installation de Node.js n'est nécessaire pour utiliser le ZIP sur Windows**. Python et Word/LibreOffice restent les prérequis de l'application complète.
 
 Après avoir installé les prérequis ci-dessous, double-cliquer sur **Lancer-Web.bat**. Le navigateur s'ouvre automatiquement ; garder la fenêtre du lanceur ouverte pendant l'utilisation. Le bouton **Parcourir** ouvre le sélecteur de dossiers Windows. On peut également saisir les chemins, y compris un chemin réseau accessible au compte Windows.
 
@@ -32,7 +34,7 @@ Ces chemins réseau nécessitent que le compte Windows utilisé ait accès au pa
 
 Lancement manuel : `py -3 -m word_pdf.web`. Si le port est occupé : `py -3 -m word_pdf.web --port 8766`. Arrêter le serveur avec Ctrl+C dans sa fenêtre. `--no-browser` désactive l'ouverture automatique du navigateur.
 
-Lors d'une mise à jour, fermer l'ancien lanceur, extraire le nouveau ZIP dans un autre dossier puis ouvrir son **Lancer-Web.bat**. Vérifier la mention **v1.0.3** en haut de la page. Fermer seulement l'onglet n'arrête pas l'ancien serveur. Sans port explicitement fixé, un port libre est choisi si le port 8765 est déjà utilisé, et le navigateur ouvre l'adresse de la nouvelle instance. Un port demandé explicitement reste strict : son occupation est signalée comme une erreur. Les références absentes et ambiguës affichent désormais leur cause précise dans la liste.
+Lors d'une mise à jour, fermer l'ancien lanceur, extraire le nouveau ZIP dans un autre dossier puis ouvrir son **Lancer-Web.bat**. Vérifier la mention **v2.0.0** en haut de la page. Fermer seulement l'onglet n'arrête pas l'ancien serveur. Sans port explicitement fixé, un port libre est choisi si le port 8765 est déjà utilisé, et le navigateur ouvre l'adresse de la nouvelle instance. Un port demandé explicitement reste strict : son occupation est signalée comme une erreur. Les références absentes et ambiguës affichent désormais leur cause précise dans la liste.
 
 La recherche directe est visible en premier. Cliquer sur **Décrire ma recherche en une phrase** pour ouvrir l'assistant local. Après utilisation des recherches proposées, ce panneau se replie et le champ de recherche reprend le focus. Un compteur affiche la sélection globale et une barre de progression indique le nombre exact de fichiers traités dans un lot, indépendamment de leur réussite ou de leur échec.
 
@@ -76,6 +78,21 @@ Le format inversé **année-numéro** est également reconnu lorsqu'un côté es
 
 ## Développement et vérification
 
+Les sources de l'interface se trouvent dans `frontend/`. Pour modifier/recompiler Angular, utiliser Node.js **24 LTS** et les versions verrouillées dans `frontend/package-lock.json` :
+
+```text
+cd frontend
+npm ci
+npm run typecheck
+npm run build
+cd ..
+python -m word_pdf.web
+```
+
+`npm run build` remplace les fichiers générés dans `word_pdf/angular/` ; ces fichiers doivent être inclus dans chaque version distribuée. Ne pas les modifier à la main. `npm start` dans `frontend` lance la compilation continue ; laisser également le serveur Python ouvert dans un autre terminal et recharger le navigateur après chaque compilation. Toutes les requêtes utilisent l'origine du serveur Python et son jeton local.
+
+Vérification complète après compilation :
+
 ```text
 python -m unittest discover -s tests -v
 python -m compileall -q word_pdf
@@ -85,4 +102,6 @@ python -m word_pdf.web --no-browser
 
 Les tests automatisés vérifient la recherche, les collisions, la conservation des originaux et les erreurs d'export, avec un convertisseur de test. Ils ne prouvent pas la conversion réelle par Word. Avant diffusion sur Windows, essayer un vrai `.doc` et un vrai `.docx`, vérifier les PDF, les accents, les chemins réseau et le parcours au clavier. Le cloud Linux sans affichage ni Word ne permet pas cette validation Windows.
 
-Les tests HTTP de `tests/test_web.py` couvrent aussi les contrôles d'accès locaux, la pagination, les exports et les téléchargements. Pour le test navigateur facultatif, installer Playwright et son Chromium dans l'environnement de développement, puis exécuter `python tests/browser_check.py`. Un Chromium existant peut être indiqué avec `CHROMIUM_EXECUTABLE`. Ce test utilise un convertisseur simulé et vérifie le parcours web, les erreurs, le clavier et une largeur de 390 pixels ; il ne valide pas Word ni le sélecteur Windows.
+Les tests HTTP de `tests/test_web.py` couvrent aussi les contrôles d'accès locaux, la pagination, les exports et les téléchargements. Pour le test navigateur, exécuter d'abord `npm ci` dans `frontend` (inclut axe-core), installer Playwright et son Chromium dans l'environnement de développement, puis exécuter `python tests/browser_check.py`. Un Chromium existant peut être indiqué avec `CHROMIUM_EXECUTABLE`. Ce test utilise un convertisseur simulé et vérifie le parcours web, les erreurs, le clavier et une largeur de 390 pixels ; il ne valide pas Word ni le sélecteur Windows.
+
+L'audit statique Premium nécessite son script fourni par la compétence. L'adaptateur `python frontend/tools/audit-angular.py --auditor <chemin/audit_project.py>` reconnaît uniquement la syntaxe Angular `(click)` comme un gestionnaire d'action, sans désactiver les règles. La compilation et les contrôles Playwright vérifient les gestionnaires effectivement exécutés. Le contrôle navigateur inclut axe-core sur l'écran initial, le dialogue et le tableau sur mobile, avec les règles WCAG A/AA applicables ; il ne remplace pas une validation manuelle avec lecteur d'écran sur Windows.

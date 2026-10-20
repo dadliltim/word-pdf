@@ -5,6 +5,7 @@ import argparse
 import hmac
 import json
 import os
+import mimetypes
 import secrets
 import subprocess
 import threading
@@ -16,7 +17,7 @@ from .core import DocumentError, export_document, find_documents, validate_refer
 from .assistant import prepare_search
 from . import __version__
 
-STATIC = Path(__file__).with_name("static")
+FRONTEND = Path(__file__).with_name("angular") / "browser"
 PAGE_SIZE = 25
 
 
@@ -60,18 +61,22 @@ class Handler(BaseHTTPRequestHandler):
             self._send(403, {"error": "Accès réservé au poste local."})
             return
         if self.path == "/theme.css":
-            colors = json.loads(STATIC.with_name("theme.json").read_text(encoding="utf-8"))
+            colors = json.loads(Path(__file__).with_name("theme.json").read_text(encoding="utf-8"))
             css = ":root{" + ";".join(f"--{key}:{value}" for key, value in colors.items()) + "}"
             self._send(200, css.encode(), "text/css; charset=utf-8")
             return
-        assets = {"/": ("index.html", "text/html; charset=utf-8"),
-                  "/app.css": ("app.css", "text/css; charset=utf-8"),
-                  "/app.js": ("app.js", "text/javascript; charset=utf-8")}
-        if self.path not in assets:
+        name = 'index.html' if self.path == '/' else self.path.removeprefix('/')
+        if name != Path(name).name or Path(name).suffix not in {'.html', '.js', '.css', '.svg', '.png', '.ico', '.woff2'}:
             self._send(404, {"error": "Page introuvable."})
             return
-        name, mime = assets[self.path]
-        content = (STATIC / name).read_bytes().replace(b"__APP_TOKEN__", self.server.token.encode()).replace(b"__APP_VERSION__", __version__.encode())
+        target = FRONTEND / name
+        if not target.is_file():
+            self._send(503 if self.path == '/' else 404, {"error": "Interface Angular absente. Compilez-la avec npm ci puis npm run build dans frontend." if self.path == '/' else "Page introuvable."})
+            return
+        mime = {'.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml'}.get(target.suffix) or mimetypes.guess_type(name)[0] or 'application/octet-stream'
+        content = target.read_bytes()
+        if name == 'index.html':
+            content = content.replace(b"__APP_TOKEN__", self.server.token.encode()).replace(b"__APP_VERSION__", __version__.encode())
         self._send(200, content, mime)
 
     def do_POST(self):

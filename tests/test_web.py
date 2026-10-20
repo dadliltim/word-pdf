@@ -1,6 +1,7 @@
 import http.client
 import errno
 import json
+import re
 import tempfile
 import threading
 import unittest
@@ -45,13 +46,17 @@ class WebTest(unittest.TestCase):
         return status, json.loads(result)
 
     def test_page_and_assets_have_security_headers(self):
-        for url in ('/', '/theme.css', '/app.css', '/app.js'):
+        html = self.request('/')[2].decode()
+        assets = re.findall(r'(?:src|href)="([^"#]+\.(?:js|css))"', html)
+        self.assertTrue(any('main-' in asset for asset in assets))
+        for url in ('/', '/theme.css', '/icons.svg', *('/' + asset.lstrip('/') for asset in assets)):
             status, headers, content = self.request(url)
             self.assertEqual(status, 200)
             self.assertEqual(headers['Cache-Control'], 'no-store')
             self.assertIn("frame-ancestors 'none'", headers['Content-Security-Policy'])
         self.assertIn(self.server.token.encode(), self.request('/')[2])
         self.assertEqual(self.request('/../word_export.ps1')[0], 404)
+        self.assertEqual(self.request('/app.js')[0], 404)
 
     def test_rejects_missing_token_foreign_origin_and_host(self):
         for headers in ({'X-App-Token': ''}, {'Origin': 'https://example.com'}, {'Host': 'example.com'}):
