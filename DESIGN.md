@@ -56,7 +56,9 @@ Le web réutilise `core.py` pour les règles de fichiers. Les propriétaires des
 
 La sélection web utilise désormais des cases à cocher natives, avec compteur global et sélection de la page. `batch-dialog` reprend le rayon des panneaux, les boutons et les couleurs existants ; son contenu défile naturellement dans une hauteur maximale de 85vh. Le bilan du lot utilise des blocs de résultats avec les mêmes chemins et boutons de téléchargement, sans nouvelle palette.
 
-Le panneau de saisie libre est un `details` ouvert, de couleur soft et de rayon de contrôle. Son textarea natif garde une hauteur suffisante et son défilement système ; la proposition modifiable utilise le même champ texte que la recherche. La mention de traitement local et l'étape de vérification font partie du contenu permanent, sans habillage de chat ou promesse d'IA générative.
+La recherche directe est désormais prioritaire, avec un titre de 29px sur une ligne et une mise en page compacte. Le panneau de saisie libre est un `details` fermé par défaut, accessible juste après le champ de recherche, de couleur soft et de rayon de contrôle. Son textarea natif garde une hauteur suffisante et son défilement système ; la proposition modifiable utilise le même champ texte que la recherche. La mention de traitement local et l'étape de vérification font partie du contenu permanent, sans habillage de chat ou promesse d'IA générative. Après utilisation de la proposition, le panneau se replie et la recherche reprend le focus.
+
+Un compteur de sélection est placé près des cases de la page, avec une pastille primaire lorsque la sélection est non vide. Les noms de fichiers utilisent un corps de 13px. Le trait intérieur de la ligne cochée renforce la sélection sans communiquer par la couleur seule. La progression native du lot mesure le nombre de documents traités, succès et erreurs compris, et conserve le bilan explicite par fichier. La hauteur naturelle des formulaires et le défilement propre au tableau restent indépendants.
 
 ## Do's and Don'ts
 

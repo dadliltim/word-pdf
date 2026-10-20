@@ -27,6 +27,8 @@ function updateControls() {
   $('select-page').checked = eligible.length > 0 && checked === eligible.length;
   $('select-page').indeterminate = checked > 0 && checked < eligible.length;
   $('selection').textContent = selected.size ? `${selected.size} document(s) sélectionné(s), y compris sur les autres pages.` : 'Cochez un ou plusieurs documents dans les résultats.';
+  $('selection-count').textContent = `${selected.size} sélectionné${selected.size > 1 ? 's' : ''}`;
+  $('selection-count').classList.toggle('has-selection', selected.size > 0);
   $('previous').disabled = busy || !current || current.page === 0;
   $('next').disabled = busy || !current || (current.page + 1) * current.page_size >= current.total;
   $('spinner').hidden = !busy;
@@ -46,6 +48,7 @@ function resetResults() {
   $('range').textContent = 'Aucun document sélectionné';
   $('selection').textContent = 'Sélectionnez un document dans les résultats.';
   $('outputs').hidden = true;
+  $('batch-progress').hidden = true;
   $('export-results').replaceChildren();
   $('missing-queries').hidden = true;
   updateControls();
@@ -98,6 +101,7 @@ $('use-proposal').addEventListener('click', () => {
   if (busy || !$('proposed-searches').value.trim()) return;
   $('reference').value = $('proposed-searches').value.trim();
   $('reference').dispatchEvent(new Event('input')); $('reference').focus();
+  document.querySelector('.assistant').open = false;
   status('Recherches prêtes. Cliquez sur Rechercher pour consulter les documents.');
 });
 
@@ -259,9 +263,12 @@ $('confirm-batch').addEventListener('click', async () => {
   $('batch-dialog').close();
   busy = true; updateControls();
   $('outputs').hidden = false; $('export-results').replaceChildren();
+  $('batch-progress').hidden = false;
+  $('export-progress').max = items.length; $('export-progress').value = 0;
   let succeeded = 0, failed = 0;
   for (const [position, item] of items.entries()) {
     status(`Traitement ${position + 1}/${items.length} : ${item.name}. Jusqu’à deux minutes par document.`);
+    $('progress-label').textContent = `Document ${position + 1} sur ${items.length}`;
     const record = document.createElement('article'); record.className = 'batch-result';
     const heading = document.createElement('h4'); heading.textContent = item.name; record.append(heading);
     try {
@@ -280,8 +287,10 @@ $('confirm-batch').addEventListener('click', async () => {
     }
     $('export-results').append(record);
     $('batch-summary').textContent = `${succeeded} réussi(s) · ${failed} échec(s) · ${items.length - position - 1} restant(s)`;
+    $('export-progress').value = position + 1;
   }
   status(`Traitement terminé : ${succeeded} réussi(s), ${failed} échec(s). Les documents en échec restent cochés.`, failed ? 'error' : 'success');
+  $('progress-label').textContent = `Traitement terminé · ${items.length} document(s)`;
   busy = false; updateControls();
 });
 window.addEventListener('beforeunload', event => { if (busy) { event.preventDefault(); event.returnValue = ''; } });
