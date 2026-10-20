@@ -1,6 +1,6 @@
 # Référence — Word vers PDF
 
-Application interne pour Windows, en version bureau ou web locale. Recherche un document `.doc` ou `.docx` par sa référence, en copie le contenu sous un nom court, puis produit un PDF dans un autre dossier. Les originaux restent inchangés. Aucun document n'est envoyé à un service en ligne.
+Application interne pour Windows, en version bureau ou web locale. Recherche un document `.doc` ou `.docx` par référence ou par mots du nom, en copie le contenu sous un nom court, puis produit un PDF dans un autre dossier. Les originaux restent inchangés. Aucun document n'est envoyé à un service en ligne.
 
 ## Version web
 
@@ -32,9 +32,11 @@ On peut aussi lancer `py -3 -m word_pdf` depuis le dossier du projet.
 
 1. Choisir le dossier source ; ses sous-dossiers sont également explorés.
 2. Choisir deux dossiers de sortie existants et différents : **Copies Word** et **Fichiers PDF**. Les dossiers de sortie sont exclus de la recherche lorsqu'ils se trouvent sous le dossier source. Ne pas choisir le dossier source lui-même comme dossier de sortie.
-3. Saisir `0680-2026`, ou coller le nom complet commençant par cette référence, puis lancer la recherche. Les espaces autour du tiret, les tirets typographiques et les chiffres arabes sont normalisés automatiquement.
-4. Sélectionner le document souhaité s'il existe plusieurs correspondances.
-5. Cliquer sur **Copier et convertir en PDF**.
+3. Saisir une référence (`0680-2026`), une partie du nom (`MANAZIL`, `SAID OUFFA`), ou le nom complet, puis lancer la recherche. Chaque mot doit apparaître dans le nom ; les majuscules, accents et espaces répétés ne bloquent pas la recherche. Les tirets typographiques et les chiffres arabes sont normalisés.
+4. Sélectionner le document souhaité et vérifier les noms de sortie proposés dans la version web. Ils sont extraits du fichier sélectionné, indépendamment des mots saisis.
+5. Cliquer sur **Valider le renommage et convertir** dans la version web, ou **Copier et convertir en PDF** dans la version bureau. La recherche seule n'écrit aucun fichier.
+
+Un document sans référence numéro-année au début de son nom apparaît dans les résultats, mais son export est bloqué avec une explication : l'application ne peut pas deviner sa référence.
 
 Exemple : `0680-2026 VI KLJKLD-IJLJL TF 12345-13.docx` donne :
 

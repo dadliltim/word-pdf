@@ -12,7 +12,7 @@ function status(text, tone = '') {
 
 function updateControls() {
   document.querySelectorAll('button, input').forEach(element => { element.disabled = busy; });
-  $('export-button').disabled = busy || selected === null || !current;
+  $('export-button').disabled = busy || selected === null || !current || !current.items.find(item => item.index === selected)?.reference;
   $('previous').disabled = busy || !current || current.page === 0;
   $('next').disabled = busy || !current || (current.page + 1) * current.page_size >= current.total;
   $('spinner').hidden = !busy;
@@ -27,7 +27,7 @@ function resetResults() {
   $('table-wrap').hidden = true;
   $('empty').hidden = false;
   $('empty-title').textContent = 'Votre recherche commence ici';
-  $('empty-description').textContent = 'Les documents correspondant à votre référence apparaîtront dans cet espace.';
+  $('empty-description').textContent = 'Les documents Word correspondant à votre recherche apparaîtront ici.';
   $('count').textContent = 'En attente';
   $('range').textContent = 'Aucun document sélectionné';
   $('selection').textContent = 'Sélectionnez un document dans les résultats.';
@@ -57,8 +57,8 @@ function render(result) {
   $('empty').hidden = result.total > 0;
   $('table-wrap').hidden = result.total === 0;
   $('count').textContent = `${result.total.toLocaleString('fr-FR')} document${result.total === 1 ? '' : 's'}`;
-  $('empty-title').textContent = 'Aucun document pour cette référence';
-  $('empty-description').textContent = 'Vérifiez le numéro, l’année et le dossier source, puis relancez la recherche.';
+  $('empty-title').textContent = 'Aucun document pour cette recherche';
+  $('empty-description').textContent = 'Essayez une autre partie du nom ou vérifiez le dossier source.';
   result.items.forEach(item => {
     const row = document.createElement('tr');
     const choice = document.createElement('td');
@@ -67,7 +67,11 @@ function render(result) {
     radio.setAttribute('aria-label', `Sélectionner ${item.name}, dossier ${item.folder}`);
     radio.addEventListener('change', () => {
       selected = item.index;
-      $('selection').textContent = `${result.reference}${item.extension} + ${result.reference}.pdf`;
+      $('selection').textContent = item.reference
+        ? `${item.name} → ${item.reference}${item.extension} + ${item.reference}.pdf`
+        : 'Ce document ne commence pas par une référence numéro-année : aucun nom de sortie ne peut être extrait.';
+      status(item.reference ? 'Vérifiez les noms proposés, puis validez le renommage et la conversion.'
+        : 'Document trouvé, mais référence absente au début du nom. Conversion indisponible.', item.reference ? '' : 'error');
       $('outputs').hidden = true; exported = null; updateControls();
     });
     choice.append(radio);
@@ -76,6 +80,9 @@ function render(result) {
     label.append(document.createTextNode(item.name));
     const folder = document.createElement('span'); folder.className = 'subfolder'; folder.textContent = item.folder === '.' ? 'Dossier source' : item.folder;
     label.append(folder); details.append(label);
+    const proposal = document.createElement('span'); proposal.className = 'subfolder';
+    proposal.textContent = item.reference ? `Noms proposés : ${item.reference}${item.extension} et ${item.reference}.pdf` : 'Référence numéro-année absente';
+    label.append(proposal);
     const format = document.createElement('td');
     const tag = document.createElement('span'); tag.className = 'file-tag'; tag.textContent = item.extension.slice(1).toUpperCase();
     format.append(tag); row.append(choice, details, format); $('rows').append(row);
@@ -86,26 +93,13 @@ function render(result) {
   updateControls();
 }
 
-function extractReference(value) {
-  const normalized = value.trim().replace(/^["'“”]+|["'“”]+$/g, '')
-    .replace(/[٠-٩]/g, char => String(char.charCodeAt(0) - 0x660))
-    .replace(/[۰-۹]/g, char => String(char.charCodeAt(0) - 0x6f0))
-    .replace(/[０-９]/g, char => String(char.charCodeAt(0) - 0xff10))
-    .replace(/\s*[-‐‑‒–—−－]\s*/g, '-');
-  return normalized.match(/^([0-9]{1,12}-[0-9]{4})(?=$|[\s_.]|-(?![0-9]))/)?.[1] || null;
-}
-
 function validate() {
   let first = null;
   for (const key of fields) {
     const value = $(key).value.trim();
     let message = '';
-    if (!value) message = key === 'reference' ? 'Saisissez une référence.' : 'Choisissez un dossier existant.';
-    else if (key === 'reference') {
-      const reference = extractReference(value);
-      if (!reference) message = 'Saisissez une référence numéro-année ou un nom commençant par 0677-2026.';
-      else $(key).value = reference;
-    }
+    if (!value) message = key === 'reference' ? 'Saisissez un nom, un mot ou une référence.' : 'Choisissez un dossier existant.';
+    else if (key === 'reference' && value.length > 300) message = 'Limitez la recherche à 300 caractères.';
     $(`${key}-error`).textContent = message;
     $(key).setAttribute('aria-invalid', String(!!message));
     if (message && !first) first = $(key);

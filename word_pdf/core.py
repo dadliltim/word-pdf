@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import unicodedata
 from pathlib import Path
 from typing import Callable
 
@@ -28,12 +29,19 @@ def validate_reference(value: str) -> str:
 
 
 def find_documents(source: Path, reference: str, excluded: tuple[Path, ...] = ()) -> list[Path]:
-    reference = validate_reference(reference)
+    query = reference.strip().strip('"\'“”')
+    if not query or len(query) > 300:
+        raise DocumentError("Saisissez un nom, une partie du nom ou une référence (300 caractères maximum).")
+    def searchable(value: str) -> str:
+        return ''.join(char for char in unicodedata.normalize('NFKD', normalize_name(value).casefold())
+                       if not unicodedata.combining(char))
+    normalized = searchable(query)
+    exact_reference = bool(re.fullmatch(r"[0-9]{1,12}-[0-9]{4}", normalized))
     source = source.expanduser().resolve()
     if not source.is_dir():
         raise DocumentError("Choisissez un dossier source existant et accessible.")
     ignored = {path.expanduser().resolve() for path in excluded}
-    pattern = re.compile(r"^" + re.escape(reference) + r"(?=$|[\s_]|-(?![0-9]))", re.I)
+    pattern = re.compile(r"^" + re.escape(normalized) + r"(?=$|[\s_]|-(?![0-9]))", re.I)
     found = []
 
     def on_error(error: OSError) -> None:
@@ -44,8 +52,10 @@ def find_documents(source: Path, reference: str, excluded: tuple[Path, ...] = ()
                          and not (Path(folder) / d).is_symlink())
         for name in sorted(files):
             path = Path(folder) / name
+            candidate = searchable(name)
+            matches = bool(pattern.match(candidate)) if exact_reference else all(term in candidate for term in normalized.split())
             if (path.suffix.lower() in {".doc", ".docx"} and not name.startswith("~$")
-                    and pattern.match(normalize_name(path.stem)) and not path.is_symlink()):
+                    and matches and not path.is_symlink()):
                 found.append(path)
     return sorted(found, key=lambda path: str(path).casefold())
 

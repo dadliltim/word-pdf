@@ -66,6 +66,20 @@ class DocumentsTest(unittest.TestCase):
         self.assertEqual(pdf.name, '0677-2026.pdf')
         self.assertEqual(document.read_bytes(), b'original')
 
+    def test_keyword_search_anywhere_ignores_case_accents_and_spacing(self):
+        name = '0677-2026 VI -  MANAZIL BANI - DAR AL AMANE  - SAID OUFFA 226382-13 VALIDÉE.docx'
+        path = self.source / name
+        path.touch()
+        for query in ('MANAZIL', 'said ouffa', 'MANAZIL   OUFFA', '226382-13', 'validee'):
+            with self.subTest(query=query):
+                self.assertEqual(find_documents(self.source, query), [path])
+        self.assertEqual(find_documents(self.source, 'MANAZIL inconnu'), [])
+
+    def test_documents_without_reference_are_searchable(self):
+        path = self.source / 'Rapport MANAZIL.docx'
+        path.touch()
+        self.assertEqual(find_documents(self.source, 'rapport'), [path])
+
     def test_success_preserves_original_and_names_outputs(self):
         original = self.document.read_bytes()
         word, pdf = self.export()

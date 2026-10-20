@@ -88,7 +88,7 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data, dict):
                 raise DocumentError("Requête invalide.")
             if self.path == "/api/search":
-                reference = validate_reference(self._text(data, "reference"))
+                reference = self._text(data, "reference")
                 source = Path(self._text(data, "source")).expanduser().resolve()
                 folders = [Path(self._text(data, key)).expanduser().resolve() for key in ("documents", "pdf")]
                 if source in folders or folders[0] == folders[1]:
@@ -115,6 +115,7 @@ class Handler(BaseHTTPRequestHandler):
                 index = int(data.get("index", -1))
                 if not 0 <= index < len(paths):
                     raise DocumentError("Sélectionnez un document dans les résultats.")
+                reference = validate_reference(paths[index].stem)
                 if not self.server.conversion.acquire(blocking=False):
                     self._send(409, {"error": "Une conversion est déjà en cours. Attendez sa fin."})
                     return
@@ -180,9 +181,15 @@ class Handler(BaseHTTPRequestHandler):
         reference, source, folders, paths = record
         page = max(0, min(page, max(0, (len(paths) - 1) // PAGE_SIZE)))
         start = page * PAGE_SIZE
+        def suggested(path):
+            try:
+                return validate_reference(path.stem)
+            except DocumentError:
+                return None
         return {"search_id": key, "reference": reference, "page": page, "total": len(paths), "page_size": PAGE_SIZE,
                 "items": [{"index": index, "name": path.name, "folder": str(path.parent.relative_to(source)),
-                           "extension": path.suffix.lower()} for index, path in enumerate(paths[start:start + PAGE_SIZE], start)]}
+                           "reference": suggested(path), "extension": path.suffix.lower()}
+                          for index, path in enumerate(paths[start:start + PAGE_SIZE], start)]}
 
 
 def main():

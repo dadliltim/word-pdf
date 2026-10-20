@@ -76,7 +76,7 @@ class Application(tk.Tk):
             entry.grid(row=row, column=1, sticky="ew", pady=5)
             self.controls.append(entry)
             self._button(main, "Parcourir…", lambda k=key: self._pick(k)).grid(row=row, column=2, padx=(10, 0))
-        ttk.Label(main, text="Référence recherchée").grid(row=5, column=0, sticky="w", pady=(18, 5))
+        ttk.Label(main, text="Nom ou référence").grid(row=5, column=0, sticky="w", pady=(18, 5))
         self.reference_entry = ttk.Entry(main, textvariable=self.fields["reference"])
         self.reference_entry.grid(row=5, column=1, sticky="ew", pady=(18, 5))
         self.reference_entry.bind("<Return>", lambda event: self.search())
@@ -197,7 +197,8 @@ class Application(tk.Tk):
             return
         snapshot = self._snapshot()
         try:
-            validate_reference(snapshot[3])
+            if not snapshot[3]:
+                raise DocumentError("Saisissez un nom, un mot ou une référence.")
             if not snapshot[0]:
                 raise DocumentError("Choisissez d’abord le dossier source.")
             if any(value and Path(value).expanduser().resolve() == Path(snapshot[0]).expanduser().resolve()
@@ -220,6 +221,11 @@ class Application(tk.Tk):
             self._message("Choisissez les deux dossiers de sortie avant de convertir.", True)
             return
         document = self.matches[int(self.tree.selection()[0])]
+        try:
+            reference = validate_reference(document.stem)
+        except DocumentError:
+            self._message("Ce document ne commence pas par une référence numéro-année. Aucun nom de sortie ne peut être extrait.", True)
+            return
         self._message("Copie et conversion en cours… Les originaux sont conservés.")
         self._work("export", lambda: export_document(document, reference, Path(documents), Path(pdf)))
 

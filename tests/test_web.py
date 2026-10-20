@@ -69,7 +69,7 @@ class WebTest(unittest.TestCase):
         self.assertEqual(self.api('page', {'search_id': 'unknown', 'page': 0})[0], 400)
 
     def test_invalid_folders_reference_and_selection(self):
-        for change in ({'reference': '../2026'}, {'pdf': self.body['source']}, {'pdf': self.body['documents']},
+        for change in ({'reference': 'a' * 301}, {'pdf': self.body['source']}, {'pdf': self.body['documents']},
                        {'source': str(self.root / 'absent')}, {'documents': ''}):
             self.assertEqual(self.api('search', self.body | change)[0], 400)
         _, result = self.api('search', self.body)
@@ -87,7 +87,8 @@ class WebTest(unittest.TestCase):
                 target.write_bytes(b'%PDF-1.7\ntest fixture, not a Word conversion')
             return export_document(*args, converter=converter)
 
-        _, search = self.api('search', self.body)
+        _, search = self.api('search', self.body | {'reference': 'KLJKLD IJLJL'})
+        self.assertEqual(search['items'][0]['reference'], '0680-2026')
         with patch('word_pdf.web.export_document', side_effect=exporter):
             status, result = self.api('export', {'search_id': search['search_id'], 'index': 0})
             self.assertEqual(status, 200)
@@ -99,6 +100,15 @@ class WebTest(unittest.TestCase):
             self.assertEqual(self.api('export', {'search_id': search['search_id'], 'index': 0})[0], 400)
         self.assertEqual(self.document.read_bytes(), b'original Word fixture')
         self.assertEqual(self.api('download', {'export_id': 'missing', 'kind': 'pdf'})[0], 400)
+
+    def test_keyword_results_have_independent_proposed_names(self):
+        (self.root / 'source/0677-2026 MANAZIL.docx').touch()
+        (self.root / 'source/0788-2026 MANAZIL.doc').touch()
+        (self.root / 'source/Rapport MANAZIL.docx').touch()
+        status, result = self.api('search', self.body | {'reference': 'manazil'})
+        self.assertEqual(status, 200)
+        self.assertEqual([item['reference'] for item in result['items']], ['0677-2026', '0788-2026', None])
+        self.assertEqual(self.api('export', {'search_id': result['search_id'], 'index': 2})[0], 400)
 
     def test_busy_conversion_is_rejected(self):
         _, search = self.api('search', self.body)
