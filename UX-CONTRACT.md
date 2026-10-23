@@ -9,6 +9,7 @@ Source métier : demande utilisateur dans cette session, recherche d'une référ
 | Form | `AppComponent.search`, `FolderFieldComponent` dans `frontend/src/app` | Ce contrat : champs natifs étiquetés, erreurs inline, premier invalide focalisé | Recherche explicite | `tests/browser_check.py` |
 | Table Selection | `AppComponent.selected`, `toggle`, `togglePage`, `page` dans `frontend/src/app` | Ce contrat : cases natives, sélection conservée entre pages, effacée au changement de recherche | Lignes individuelles, sélection de la page, tout désélectionner | `tests/browser_check.py` |
 | Scrollbar | `frontend/src/styles.css` | DESIGN.md : baseline globale, standards et WebKit, forced-colors | Tableau borné et document naturel | `tests/browser_check.py` |
+| Toast | `ToastService` et `ToastComponent` | Ce contrat : réussite, 6 secondes, fermeture, déduplication, statut persistant | Succès | `tests/browser_check.py` |
 
 Autres propriétaires : `_page` dans `web.py` pour la pagination serveur de 25 et les bornes (`tests/test_web.py`) ; `/api/browse` pour le dialogue système avec saisie manuelle équivalente (validation Windows restante) ; signal `AppComponent.notice` pour la région live persistante (`tests/browser_check.py`) ; `core.export_document` pour la conservation des originaux et le refus d'écrasement (`tests/test_core.py`, `tests/test_web.py`).
 
@@ -24,7 +25,7 @@ Les noms arabes sont normalisés pour comparaison uniquement : Unicode NFKC, ret
 
 Cas fourni par l'utilisateur : `عقد بيع الاملاك المخزنية - الملك الخاص - عائشة الحميدي سيتل- 2026-0627 - TF 24083-R ok`. La référence se trouve en fin de nom, au format année-numéro. `references_in_name` la normalise en `0627-2026` ; le côté droit est prioritaire s'il est déjà une année 1900–2099, sinon le côté gauche peut fournir l'année. La recherche accepte les deux ordres, mais les noms proposés restent numéro-année. Les identifiants fonciers sans année, comme `24083-R`, ne sont pas des références de renommage.
 
-Les chemins et références restent en mémoire uniquement, sans URL, localStorage ou journal HTTP. Le rechargement réinitialise la page ; avertissement du navigateur uniquement si une opération est active. Le serveur garde jusqu'à 20 recherches et 100 références d'export en mémoire, puis évince les plus anciennes, sans supprimer les fichiers. Une recherche expirée doit être relancée. Une réponse réseau perdue après export peut masquer une réussite : le message demande de vérifier les dossiers avant de réessayer.
+Les chemins et références restent en mémoire uniquement, sans URL, stockage persistant ou journal HTTP. Le rechargement réinitialise la page ; avertissement du navigateur uniquement si une opération est active. Le serveur garde jusqu'à 20 recherches et 100 références d'export en mémoire, puis évince les plus anciennes, sans supprimer les fichiers. Une recherche expirée doit être relancée. Une réponse réseau perdue après export peut masquer une réussite : le message demande de vérifier les dossiers avant de réessayer.
 
 ## Traitement par lot
 
@@ -50,4 +51,14 @@ Application web locale mono-poste, écoute uniquement sur `127.0.0.1`. Vérifica
 
 ## Locale et accessibilité
 
-Français (`lang=fr`), quantités formatées en `fr-FR`, aucune donnée japonaise. Contrôles HTML natifs, focus visible, région de statut accessible, palette compatible contraste texte, animations supprimées avec reduced-motion. Tableau défilant sur petit écran ; la page conserve son défilement naturel. Pas de dialogue ou select personnalisé.
+Français (`lang=fr`), quantités formatées en `fr-FR`, aucune donnée japonaise. Contrôles HTML natifs, focus visible, région de statut accessible, palette compatible contraste texte, animations supprimées avec reduced-motion. Tableau défilant sur petit écran ; la page conserve son défilement naturel. Dialogue modal appartenant à l’application ; pas de select personnalisé.
+
+## Contrat édition 3
+
+`PreferencesService` possède le thème et le repli ; seules ces deux préférences non sensibles sont mémorisées. Ctrl+K focalise la recherche ; Ctrl+Maj+B replie les dossiers ; Ctrl+Maj+L change le thème. Aucune interception pendant composition ou dialogue.
+
+Le filtre du tableau, distinct de la recherche disque explicite, est différé de 300ms et respecte la composition IME ; effacement immédiat avec focus rendu. `loadGrid` ignore les réponses périmées. `_page` filtre et trie tous les résultats par nom ou format, conserve les index originaux et borne la pagination. La sélection globale est conservée pendant tri/filtrage ; un nouveau contexte de recherche la réinitialise. Aucun état documentaire dans l'URL.
+
+Le dialogue de confirmation remplace la confirmation unique par deux étapes : documents puis destinations. Aucun export à l'étape 1 ; Retour préserve le lot, Annuler/Escape ferment sans écriture. Le focus initial reste sur Annuler et Tab reste dans les boutons visibles. Les dossiers sont en lecture seule pour correspondre au contexte validé. Les validations des dossiers et de recherche, et le parseur serveur, restent les propriétaires canoniques.
+
+Les squelettes remplacent l'indicateur tournant pour la liste ; une opération de conversion conserve une progression native mesurée par document. Les erreurs restent persistantes et ne dépendent pas d'un toast.

@@ -28,7 +28,7 @@ Outil de classement documentaire français pour un poste Windows interne, dispon
 
 ## Colors
 
-Le bleu ardoise donne une hiérarchie de bureau documentaire. `word_pdf/theme.json` est la source runtime canonique des six couleurs ci-dessus. Adaptateurs : `THEME` dans `gui.py` et `/theme.css` généré par `web.py` vers les propriétés CSS de `frontend/src/styles.css`. Les valeurs ne sont pas recopiées dans ces adaptateurs. Les couleurs auxiliaires de bordure, succès et défilement sont définies dans `frontend/src/styles.css`. Les erreurs sont toujours accompagnées de texte. Un seul thème clair, sans ressources distantes.
+Le bleu ardoise donne une hiérarchie de bureau documentaire. `word_pdf/theme.json` est la source runtime canonique des six couleurs ci-dessus. Adaptateurs : `THEME` dans `gui.py` et `/theme.css` généré par `web.py` vers les propriétés CSS de `frontend/src/styles.css`. Les valeurs ne sont pas recopiées dans ces adaptateurs. Les couleurs auxiliaires de bordure, succès et défilement sont définies dans `frontend/src/styles.css`. Les erreurs sont toujours accompagnées de texte. Deux thèmes web, sans ressources distantes. Le mode sombre est défini par le sélecteur `:root[data-theme=dark]` dans le CSS global ; ses valeurs canoniques ne sont pas dupliquées dans le backend.
 
 ## Typography
 
@@ -50,11 +50,11 @@ Contrôles rectangulaires natifs sur le bureau. Sur le web, panneaux de rayon 10
 
 ## Components
 
-La version web 2 utilise Angular 21 standalone, FormsModule et détection zoneless. `AppComponent` possède le parcours et l'état éphémère, `ApiService` les échanges JSON et téléchargements, `FolderFieldComponent` les champs de chemin répétés et `IconComponent` la bibliothèque d'icônes SVG locale. Les templates Angular remplacent l'ancien rendu DOM manuel ; aucune seconde interface statique n'est maintenue. Les styles sont globaux pour respecter la CSP `style-src self`, sans style inline de composant. La compilation désactive l'inlining du CSS critique.
+La version web 3 utilise Angular 21 standalone, FormsModule et détection zoneless. `AppComponent` possède le parcours et l'état éphémère, `ApiService` les échanges JSON et téléchargements, `FolderFieldComponent` les champs de chemin répétés et `IconComponent` la bibliothèque d'icônes SVG locale. Les templates Angular remplacent l'ancien rendu DOM manuel ; aucune seconde interface statique n'est maintenue. Les styles sont globaux pour respecter la CSP `style-src self`, sans style inline de composant. La compilation désactive l'inlining du CSS critique.
 
 `Application._button` possède les actions, `_message` le statut persistant, `_work` le blocage des doubles soumissions. `ttk.Entry` possède les champs, `ttk.Treeview` la sélection simple, `filedialog.askdirectory` le choix de dossier natif Windows. Le système possède la géométrie des dialogues et des barres de défilement. Pas d'équivalent existant : dépôt initialement vide.
 
-Le web réutilise `core.py` pour les règles de fichiers. Les propriétaires des formulaires, cases à cocher, statuts, pagination et téléchargements sont documentés dans `UX-CONTRACT.md`. Les styles globaux de défilement appartiennent à `frontend/src/styles.css` avec tokens thumb/track/hover/active, fallback WebKit et forced-colors. Seuls les spinners tournent ; reduced-motion supprime animations et transitions.
+Le web réutilise `core.py` pour les règles de fichiers. Les propriétaires des formulaires, cases à cocher, statuts, pagination et téléchargements sont documentés dans `UX-CONTRACT.md`. Les styles globaux de défilement appartiennent à `frontend/src/styles.css` avec tokens thumb/track/hover/active, fallback WebKit et forced-colors. Les squelettes de chargement pulsent doucement ; reduced-motion supprime animations et transitions.
 
 La sélection web utilise désormais des cases à cocher natives, avec compteur global et sélection de la page. `batch-dialog` reprend le rayon des panneaux, les boutons et les couleurs existants ; son contenu défile naturellement dans une hauteur maximale de 85vh. Le bilan du lot utilise des blocs de résultats avec les mêmes chemins et boutons de téléchargement, sans nouvelle palette.
 
@@ -65,3 +65,11 @@ Un compteur de sélection est placé près des cases de la page, avec une pastil
 ## Do's and Don'ts
 
 Conserver les champs après une erreur, afficher les chemins exportés après réussite, désactiver les actions pendant une opération. Ne jamais écraser une sortie ni modifier un original. La recherche est explicite et locale ; aucune référence ni aucun chemin n'est stocké dans une URL ou envoyé sur le réseau. Tester l'accessibilité avec les outils Windows avant diffusion ; aucune conformité lecteur d'écran n'est revendiquée par inspection du code.
+
+## Édition professionnelle 3
+
+Le rythme des nouvelles primitives utilise les tokens CSS --space-1/2/3/4/6/8 (4/8/12/16/24/32px). Le thème sombre conserve la hiérarchie et les statuts avec des surfaces bleu ardoise. Les boutons primaires utilisent --on-primary pour préserver le contraste dans les deux thèmes. La signature centrale reste le seul accent éditorial.
+
+Décisions durables : colonne dossiers repliable (112px contre 302px), choix de thème mémorisé, tableau avec cases épinglées et en-têtes triables, parcours de confirmation en deux étapes. La page garde son défilement naturel. Les squelettes recouvrent la zone des résultats pendant le chargement sans déplacer les contrôles ; les conversions conservent leur progression réelle. Les toasts utilisent la surface et la bordure de succès existantes.
+
+Réconciliation : ancien thème clair unique et spinner remplacés à la demande de l'utilisateur ; couleurs claires, signature, protections métier et composants de dossiers conservés. Les tokens, adaptateurs et exemples sont documentés dans GUIDE-UI.md.

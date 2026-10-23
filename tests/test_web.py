@@ -45,6 +45,26 @@ class WebTest(unittest.TestCase):
         status, _, result = self.request('/api/' + route, body)
         return status, json.loads(result)
 
+    def test_grid_filter_sort_keeps_export_indices(self):
+        for number in range(30):
+            (self.document.parent / f'0680-2026 autre {number:02d}.doc').touch()
+        status, initial = self.api('search', self.body)
+        self.assertEqual(status, 200)
+        _, last_page = self.api('page', {'search_id': initial['search_id'], 'page': 1})
+        original = next(item for item in last_page['items'] if item['name'] == self.document.name)
+        status, filtered = self.api('page', {'search_id': initial['search_id'], 'page': 99,
+                                            'filter': 'KLJKLD', 'sort': 'name', 'descending': True})
+        self.assertEqual(status, 200)
+        self.assertEqual(filtered['total'], 1)
+        self.assertEqual(filtered['page'], 0)
+        self.assertEqual(filtered['items'][0]['index'], original['index'])
+        status, sorted_page = self.api('page', {'search_id': initial['search_id'], 'page': 0,
+                                               'sort': 'name', 'descending': True})
+        names = [item['name'].casefold() for item in sorted_page['items']]
+        self.assertEqual(names, sorted(names, reverse=True))
+        self.assertEqual(self.api('page', {'search_id': initial['search_id'], 'sort': 'invalid'})[0], 400)
+        self.assertEqual(self.api('page', {'search_id': initial['search_id'], 'filter': 42})[0], 400)
+
     def test_page_and_assets_have_security_headers(self):
         html = self.request('/')[2].decode()
         assets = re.findall(r'(?:src|href)="([^"#]+\.(?:js|css))"', html)

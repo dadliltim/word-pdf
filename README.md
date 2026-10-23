@@ -1,3 +1,5 @@
+> **Édition professionnelle 3.0** : thème sombre, dossiers repliables, raccourcis, tri/filtre serveur, confirmation en deux étapes et notifications. Voir [le guide UI avec les tokens et exemples Angular](GUIDE-UI.md). Le moteur de conversion reste Python.
+
 # Référence — Word vers PDF
 
 Application interne pour Windows, en version bureau ou web locale. Recherche un document `.doc` ou `.docx` par référence ou par mots du nom, en copie le contenu sous un nom court, puis produit un PDF dans un autre dossier. Les originaux restent inchangés. Aucun document n'est envoyé à un service en ligne.

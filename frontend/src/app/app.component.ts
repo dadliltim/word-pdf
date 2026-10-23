@@ -1,17 +1,27 @@
-import { Component, ElementRef, HostListener, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { ApiService, DocumentItem, Exported, Proposal, SearchResult } from './api.service';
 import { FolderFieldComponent } from './folder-field.component';
 import { IconComponent } from './icon.component';
 
+import { PreferencesService } from './preferences.service';
+import { ToastComponent, ToastService } from './toast.component';
+
 type FieldKey = 'source' | 'documents' | 'pdf' | 'reference';
 type Tone = '' | 'error' | 'success';
 interface OutputRecord {name: string; result?: Exported; error?: string;}
 
 @Component({selector: 'app-root', standalone: true,
-  imports: [FormsModule, DecimalPipe, FolderFieldComponent, IconComponent], templateUrl: './app.component.html'})
+  imports: [FormsModule, DecimalPipe, FolderFieldComponent, IconComponent, ToastComponent], templateUrl: './app.component.html'})
 export class AppComponent {
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  readonly preferences = inject(PreferencesService);
+  readonly toast = inject(ToastService);
+  gridFilter = ''; sort = 'name'; descending = false; batchStep = 1;
+  private filterTimer?: ReturnType<typeof setTimeout>;
+  private gridRequest = 0;
+  readonly loadingRows = signal(false);
   readonly api = inject(ApiService);
   readonly busy = signal(false);
   readonly notice = signal({text: 'Vos dossiers sont prêts à être utilisés. Lancez une recherche.', tone: '' as Tone});
@@ -39,7 +49,7 @@ export class AppComponent {
   get successCount() { return this.outputs.filter(output => output.result).length; }
   get errorCount() { return this.outputs.filter(output => output.error).length; }
 
-  note(text: string, tone: Tone = '') { this.notice.set({text, tone}); }
+  note(text: string, tone: Tone = '') { this.notice.set({text, tone}); if (tone === 'success') this.toast.show(text); }
   message(error: unknown) { return error instanceof Error ? error.message : 'Une erreur inattendue est survenue. Réessayez.'; }
   focus(id: string) { queueMicrotask(() => document.getElementById(id)?.focus()); }
   edit(key: FieldKey, value: string) {
@@ -47,6 +57,7 @@ export class AppComponent {
     this.note('Paramètres modifiés. Lancez une recherche pour continuer.');
   }
   reset() {
+    this.gridRequest++; clearTimeout(this.filterTimer); this.gridFilter = ''; this.sort = 'name'; this.descending = false; this.loadingRows.set(false);
     this.result = null; this.selected.clear(); this.completed.clear(); this.outputs = [];
     this.progress = 0; this.progressTotal = 0;
   }
@@ -62,12 +73,12 @@ export class AppComponent {
     if (this.fields.reference.length > 300) this.errors.reference = 'Limitez la recherche à 300 caractères.';
     const invalid = Object.keys(this.errors)[0];
     if (invalid) { this.focus(invalid); this.note('Complétez les champs indiqués avant de rechercher.', 'error'); return; }
-    this.reset(); this.busy.set(true); this.note('Recherche dans le dossier source et ses sous-dossiers…');
+    this.reset(); this.loadingRows.set(true); this.busy.set(true); this.note('Recherche dans le dossier source et ses sous-dossiers…');
     try {
       this.result = await this.api.post<SearchResult>('search', this.fields);
       this.note(this.result.total ? `${this.result.total} document(s) trouvé(s). Cochez ceux à convertir.` : 'Aucun document trouvé. Essayez un autre nom ou une autre référence.');
     } catch (error) { this.note(this.message(error), 'error'); }
-    finally { this.busy.set(false); }
+    finally { this.busy.set(false); this.loadingRows.set(false); }
   }
 
   async browse(key: FieldKey) {
@@ -116,12 +127,34 @@ export class AppComponent {
   deselect() { this.selected.clear(); }
   async page(direction: number) {
     if (this.busy() || !this.result) return;
-    this.busy.set(true); this.note('Chargement des documents…');
+    await this.loadGrid(this.result.page + direction);
+  }
+  filterGrid(value: string, composing = false) {
+    this.gridFilter = value; clearTimeout(this.filterTimer); this.gridRequest++;
+    if (!composing) this.filterTimer = setTimeout(() => void this.loadGrid(0), 300);
+  }
+  clearFilter() { this.gridFilter = ''; clearTimeout(this.filterTimer); void this.loadGrid(0); this.focus('grid-filter'); }
+  sortGrid(key: string) {
+    if (this.sort === key) this.descending = !this.descending;
+    else { this.sort = key; this.descending = false; }
+    void this.loadGrid(0);
+  }
+  async loadGrid(page: number) {
+    if (!this.result || this.busy()) return;
+    const request = ++this.gridRequest, searchId = this.result.search_id;
+    this.loadingRows.set(true);
     try {
-      this.result = await this.api.post<SearchResult>('page', {search_id: this.result.search_id, page: this.result.page + direction});
-      this.note('Votre sélection est conservée entre les pages.');
-    } catch (error) { this.note(this.message(error), 'error'); }
-    finally { this.busy.set(false); }
+      const result = await this.api.post<SearchResult>('page', {search_id: searchId, page, filter: this.gridFilter, sort: this.sort, descending: this.descending});
+      if (request !== this.gridRequest) return;
+      this.result = result; this.note('Résultats actualisés. Votre sélection est conservée.');
+    } catch (error) { if (request === this.gridRequest) this.note(this.message(error), 'error'); }
+    finally { if (request === this.gridRequest) this.loadingRows.set(false); }
+  }
+  @HostListener('document:keydown', ['$event']) shortcuts(event: KeyboardEvent) {
+    if (event.isComposing || this.dialog?.nativeElement.open) return;
+    if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === 'k') { event.preventDefault(); this.focus('reference'); }
+    if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'l') { event.preventDefault(); this.preferences.toggleTheme(); }
+    if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'b') { event.preventDefault(); this.preferences.toggleSidebar(); }
   }
 
   confirmSelection() {
@@ -134,16 +167,23 @@ export class AppComponent {
       }
       references.add(item.reference);
     }
-    this.batchItems = items; this.dialog?.nativeElement.showModal(); this.focus('cancel-batch');
+    this.batchStep = 1; this.batchItems = items; this.changeDetector.detectChanges(); this.dialog?.nativeElement.showModal(); document.getElementById('cancel-batch')?.focus();
   }
   closeDialog() { this.dialog?.nativeElement.close(); }
+  nextStep() { this.batchStep = 2; this.focus('cancel-batch'); }
+  previousStep() { this.batchStep = 1; this.focus('cancel-batch'); }
   trapFocus(event: KeyboardEvent) {
     if (event.key !== 'Tab') return;
-    if (event.shiftKey && document.activeElement?.id === 'cancel-batch') { event.preventDefault(); this.focus('confirm-batch'); }
-    else if (!event.shiftKey && document.activeElement?.id === 'confirm-batch') { event.preventDefault(); this.focus('cancel-batch'); }
+    const buttons = this.dialog?.nativeElement.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+    if (!buttons?.length) return;
+    const visible = Array.from(buttons).filter(button => button.getClientRects().length > 0);
+    const first = visible[0], last = visible[visible.length - 1];
+    if (!first || !last) return;
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
   async exportBatch() {
-    if (this.busy() || !this.result || !this.batchItems.length) return;
+    if (this.batchStep !== 2 || this.busy() || !this.result || !this.batchItems.length) return;
     const items = [...this.batchItems], searchId = this.result.search_id;
     this.closeDialog(); this.busy.set(true); this.outputs = []; this.progress = 0; this.progressTotal = items.length;
     for (const [position, item] of items.entries()) {

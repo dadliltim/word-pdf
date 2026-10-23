@@ -3,7 +3,7 @@
   "sourceRoots": ["frontend/src"],
   "locale": "fr-FR",
   "canonicalMap": "UX-CONTRACT.md",
-  "requiredCapabilities": ["Table Selection", "Form", "Scrollbar"],
+  "requiredCapabilities": ["Table Selection", "Form", "Scrollbar", "Toast"],
   "requiredCommands": ["unit", "typecheck", "build", "browser"],
   "commands": {
     "unit": "python -m unittest discover -s tests -v",

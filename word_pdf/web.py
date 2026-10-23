@@ -113,7 +113,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.server.searches[key] = (reference, source, folders, paths)
                 self._send(200, self._page(key, 0))
             elif self.path == "/api/page":
-                self._send(200, self._page(self._text(data, "search_id"), int(data.get("page", 0))))
+                self._send(200, self._page(self._text(data, "search_id"), int(data.get("page", 0)), data.get("filter", ""), data.get("sort", "name"), data.get("descending", False)))
             elif self.path == "/api/export":
                 key = self._text(data, "search_id")
                 with self.server.lock:
@@ -182,13 +182,18 @@ class Handler(BaseHTTPRequestHandler):
             raise DocumentError("Renseignez les trois dossiers et une référence comme 0680-2026.")
         return value.strip()
 
-    def _page(self, key, page):
+    def _page(self, key, page, filter_text="", sort="name", descending=False):
+        if not isinstance(filter_text, str) or len(filter_text) > 300 or sort not in ("name", "extension") or not isinstance(descending, bool):
+            raise DocumentError("Filtre ou tri invalide.")
         with self.server.lock:
             record = self.server.searches.get(key)
         if record is None:
             raise DocumentError("La recherche a expiré. Relancez-la.")
         reference, source, folders, paths = record
-        page = max(0, min(page, max(0, (len(paths) - 1) // PAGE_SIZE)))
+        indexed = [(index, path) for index, path in enumerate(paths)
+                   if not filter_text.strip() or matches_query(path.name, filter_text.strip())]
+        indexed.sort(key=lambda pair: (getattr(pair[1], 'suffix' if sort == 'extension' else 'name').casefold(), pair[1].name.casefold()), reverse=descending)
+        page = max(0, min(page, max(0, (len(indexed) - 1) // PAGE_SIZE)))
         start = page * PAGE_SIZE
         def suggested(path):
             try:
@@ -196,11 +201,11 @@ class Handler(BaseHTTPRequestHandler):
             except DocumentError as error:
                 return {"reference": None, "reference_error": str(error)}
         missing = [query for query in search_queries(reference) if not any(matches_query(path.name, query) for path in paths)]
-        return {"search_id": key, "reference": reference, "page": page, "total": len(paths), "page_size": PAGE_SIZE,
+        return {"search_id": key, "reference": reference, "page": page, "total": len(indexed), "page_size": PAGE_SIZE,
                 "missing_queries": missing,
                 "items": [{"index": index, "name": path.name, "folder": str(path.parent.relative_to(source)),
                            **suggested(path), "extension": path.suffix.lower()}
-                          for index, path in enumerate(paths[start:start + PAGE_SIZE], start)]}
+                          for index, path in indexed[start:start + PAGE_SIZE]]}
 
 
 def open_server(port=None):
